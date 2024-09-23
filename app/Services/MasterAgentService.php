@@ -1,27 +1,25 @@
 <?php
 namespace App\Services;
+use Exception;
 use Illuminate\Support\Str;
+use Throwable;
 
 class MasterAgentService extends BaseService
 {
+    /**
+     * @throws Exception|Throwable
+     */
     public function createMasterAgent(array $masterAgent): void
     {
         $res = $this->request('/api/v1/ma', 'post', $masterAgent);
         if (isset($res['errors'])) {
-            $errors = $res['errors'];
-            foreach ($errors as $error) {
-                foreach ($error as $message) {
-                    logger()->error(
-                        'Error creating master agent',
-                        ['message' => $message, 'name' => $masterAgent['name']],
-                    );
-                }
-            }
+            throw new Exception(json_encode($res['errors']));
         }
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
+     * @throws Throwable
      */
     public function prepareMasterAgent(array $masterAgentsInfo): array
     {

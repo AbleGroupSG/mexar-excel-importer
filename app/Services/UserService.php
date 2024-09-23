@@ -4,6 +4,9 @@ namespace App\Services;
 
 class UserService extends BaseService
 {
+    /**
+     * @throws \Exception
+     */
     public function createUser(array $userInfo): void
     {
         $payload = [

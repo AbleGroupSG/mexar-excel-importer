@@ -2,15 +2,19 @@
 
 namespace App\Services;
 
+use Exception;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class BaseService
 {
     const DEPARTMENT_ID = 1;
     /**
-     * @throws \Exception
+     * @throws Exception|Throwable
      */
     protected function request(string $uri, string $method = 'get', array $payload = []): array
     {
@@ -18,10 +22,27 @@ class BaseService
         $token = $this->getToken();
 
         try {
-            $response = Http::withToken($token)->$method($url, $payload);
-            return $response->json();
-        }catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
+            return retry(5, function () use ($url, $token, $method, $payload) {
+                $response = Http::withToken($token)->timeout(15)->$method($url, $payload);
+
+                if (in_array($response->status(), [400, 422])) {
+                    return $response->json();
+                }
+
+                if (!$response->successful()) {
+                    throw new RequestException($response);
+                }
+
+                return $response->json();
+            }, 1000, function ($exception) {
+                return $exception instanceof ConnectionException;
+            });
+        } catch (ConnectionException $e) {
+            throw new Exception('Request timed out after 5 attempts.');
+        } catch (RequestException $e) {
+            return $e->response->json();
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -35,11 +56,11 @@ class BaseService
                     'token_type' => 'personal'
                 ]);
                 if (!$response->ok()) {
-                    throw new \Exception('Invalid credentials');
+                    throw new Exception('Invalid credentials');
                 }
                 return $response->json()['data']['access_token'];
-            }catch (\Exception $e) {
-                throw new \Exception($e->getMessage());
+            }catch (Exception $e) {
+                throw new Exception($e->getMessage());
             }
         });
     }

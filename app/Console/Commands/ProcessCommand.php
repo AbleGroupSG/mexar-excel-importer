@@ -12,18 +12,11 @@ use App\Services\TransactionService;
 use App\Services\UserService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProcessCommand extends Command
 {
-    const SG_COUNTRY_ID = 220;
-    const DEPARTMENT_ID = 1;
     protected $signature = 'process.excel';
-
-    /**
-     * @throws \Exception
-     */
     public function handle(): void
     {
 
@@ -40,21 +33,16 @@ class ProcessCommand extends Command
         $payments = $data[6]->slice(1);
         $masterAgent = $data[7]->slice(1);
 
-//        $this->processEntities($entitiesInfo->toArray());
-//        $this->processUsers($usersInfo->toArray());
+        $this->processEntities($entitiesInfo->toArray());
+        $this->processUsers($usersInfo->toArray());
+        $this->processMasterAgent($masterAgent->toArray());
         $this->processTransactions($transactionsInfo->toArray(), $payments->toArray());
-//        $this->processBank($banks->toArray());
-//        $this->processPlatforms($platforms->toArray());
-//        $this->processAccounts($accounts->toArray());
-//        $this->processMasterAgent($masterAgent->toArray());
-
-
+        $this->processBank($banks->toArray());
+        $this->processPlatforms($platforms->toArray());
+        $this->processAccounts($accounts->toArray());
 
     }
 
-    /**
-     * @throws \Exception
-     */
     public function processEntities(array $entitiesInfo): void
     {
         $service = new EntitiesService();
@@ -65,16 +53,19 @@ class ProcessCommand extends Command
         $progressBar->start();
 
         foreach ($entitiesInfo as $entityInfo) {
-            $service->findOrCreateEntity($entityInfo);
+            try {
+                $service->findOrCreateEntity($entityInfo);
+            }catch (\Exception $e) {
+                logger()->error('Error processing entity: ' . $e->getMessage(), $entityInfo);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
         $this->output->newLine();
     }
 
-    /**
-     * @throws \Exception
-     */
+
     public function processUsers(array $usersInfo): void
     {
         $service = new UserService();
@@ -85,16 +76,18 @@ class ProcessCommand extends Command
         $progressBar->start();
 
         foreach ($usersInfo as $userInfo) {
-            $service->createUser($userInfo);
+            try {
+                $service->createUser($userInfo);
+            }catch (\Exception $e) {
+                logger()->error('Error processing user: ' . $e->getMessage(), $userInfo);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
         $this->output->newLine();
     }
 
-    /**
-     * @throws \Exception
-     */
     public function processTransactions(array $transactionsInfo, array $payments): void
     {
         $service = new TransactionService();
@@ -106,22 +99,28 @@ class ProcessCommand extends Command
         $progressBar->start();
         foreach ($transactionsInfo as $transaction) {
             if (empty($transaction[10])) {
-                throw new \Exception('Entity id is required for transaction');
+                logger()->error('Entity id is empty for transaction', $transaction);
             }
-            $entity = $service->findEntity($transaction[10]);
-            if(!$entity) {
-                throw new \Exception('Entity id ' . $transaction[10] . ' for transaction not found');
+            try {
+                $entity = $service->findEntity($transaction[10]);
+                if(!$entity) {
+                    logger()->error('Entity not found for transaction', $transaction);
+                    continue;
+                }
+                $service->createTransaction($transaction, $entity, $payments);
+            }catch (\Exception $e) {
+                logger()->error('Error processing transaction: ' . $e->getMessage(), $transaction);
+                continue;
+            } catch (\Throwable $e) {
+                logger()->error('Error processing transaction: ' . $e->getMessage(), $transaction);
+                continue;
             }
-            $newTransaction = $service->createTransaction($transaction, $entity, $payments);
             $progressBar->advance();
         }
         $progressBar->finish();
         $this->output->newLine();
     }
 
-    /**
-     * @throws \Exception
-     */
     public function processBank(array $banks): void
     {
         $service = new BankService();
@@ -131,16 +130,19 @@ class ProcessCommand extends Command
         $progressBar = $this->output->createProgressBar(sizeof($banks));
         $progressBar->start();
         foreach ($banks as $bank) {
-            $service->createBank($bank);
+            try {
+                $service->createBank($bank);
+            }catch (\Exception $e) {
+                logger()->error('Error processing bank: ' . $e->getMessage(), $bank);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
         $this->output->newLine();
     }
 
-    /**
-     * @throws \Exception
-     */
+
     public function processPlatforms(array $platformsInfo): void
     {
         $service = new PlatformService();
@@ -150,34 +152,45 @@ class ProcessCommand extends Command
         $progressBar = $this->output->createProgressBar(sizeof($platformsInfo));
         $progressBar->start();
         foreach ($platformsInfo as $platformInfo) {
-            $service->createPlatform($platformInfo);
+            try {
+                $service->createPlatform($platformInfo);
+            }catch (\Exception $e) {
+                logger()->error('Error processing platform: ' . $e->getMessage(), $platformInfo);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
         $this->output->newLine();
     }
 
-    /**
-     * @throws \Exception
-     */
     public function processAccounts(array $accountsInfo): void
     {
         $service = new AccountService();
         $accountsInfo = $service->removeEmptyRows($accountsInfo);
 
         $this->info('Processing accounts');
-        $accounts = $service->prepareAccounts($accountsInfo);
+        try {
+            $accounts = $service->prepareAccounts($accountsInfo);
+        }catch (\Exception $e) {
+            logger()->error('Error processing accounts: ' . $e->getMessage(), $accountsInfo);
+            return;
+        }
         $progressBar = $this->output->createProgressBar(sizeof($accounts));
         $progressBar->start();
 
         foreach ($accounts as $accountInfo) {
-            $service->createAccount($accountInfo);
+            try {
+                $service->createAccount($accountInfo);
+            }catch (\Exception $e) {
+                logger()->error('Error processing account: ' . $e->getMessage(), $accountInfo);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
         $this->output->newLine();
 
-//        dd($groupedAccounts); // For debugging, you can dump the grouped accounts
     }
 
     public function processMasterAgent(array $masterAgentInfo): void
@@ -186,11 +199,27 @@ class ProcessCommand extends Command
         $masterAgentInfo = $service->removeEmptyRows($masterAgentInfo);
 
         $this->info('Processing master agents');
-        $masterAgents = $service->prepareMasterAgent($masterAgentInfo);
+        try {
+            $masterAgents = $service->prepareMasterAgent($masterAgentInfo);
+        }catch (\Exception $e) {
+            logger()->error('Error processing master agents: ' . $e->getMessage(), $masterAgentInfo);
+            return;
+        } catch (\Throwable $e) {
+            logger()->error('Error processing master agents: ' . $e->getMessage(), $masterAgentInfo);
+            return;
+        }
         $progressBar = $this->output->createProgressBar(sizeof($masterAgents));
 
         foreach ($masterAgents as $masterAgent) {
-            $service->createMasterAgent($masterAgent);
+            try {
+                $service->createMasterAgent($masterAgent);
+            }catch (\Exception $e) {
+                logger()->error('Error processing master agent: ' . $e->getMessage(), $masterAgent);
+                continue;
+            } catch (\Throwable $e) {
+                logger()->error('Error processing master agent: ' . $e->getMessage(), $masterAgent);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();

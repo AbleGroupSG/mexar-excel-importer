@@ -2,15 +2,19 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Carbon;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use Throwable;
 
 class TransactionService extends BaseService
 {
     const SG_COUNTRY_ID = 220;
 //    const DEPARTMENT_ID = 1;
+
     /**
-     * @throws \Exception
+     * @throws Exception
+     * @throws Throwable
      */
     public function createTransaction(array $transaction, array $entity, array $payments): array
     {
@@ -18,7 +22,7 @@ class TransactionService extends BaseService
 
         if($this->isDateColumn($transaction[1])) {
 ////            TODO transaction date doesnt use anywhere
-            $transaction[1] = $this->parseDate($transaction[1])->format('m/d/Y');
+            $transaction[1] = $this->parseDate($transaction[1])->format('Y-m-d');
         }
 
         $data = [
@@ -26,6 +30,7 @@ class TransactionService extends BaseService
             'department_id' => self::DEPARTMENT_ID,
             'entity_id' => $entity['id'],
             'kyc_screen' => 0,
+            'trade_date' => $transaction[1],
             'purpose_of_transfer' => 'others',
             'sale_user_id' => 1,
             'process_fee' => [
@@ -46,39 +51,27 @@ class TransactionService extends BaseService
             ],
         ];
 
-        if($toSend) {
-            foreach ($toSend as $item) {
-                $data['to_sends'][] = [
-                    'method' => $item[5],
-                    'channel' => $item[6],
-                    'currency_id' => $this->getCurrencyId($item[3]),
-                    'account_id' => $item[8], // TODO account_id ?
-                    'amount' => $item[4],
-    //                'remark' => '',
-                    'master_agent_id' => intval($item[9]),
-                    'receiver_account_id' => '', // TODO receiver_account_id == Receiver Account name ?
-
-                ];
+        $transaction = $this->request('/api/v1/remittance/create', 'post', $data);
+        if(isset($transaction['transaction']['id'])){
+            $transactionId = $transaction['transaction']['id'];
+            if($toSend) {
+                $this->handleToSend($toSend, $transactionId);
             }
+
+            if($toReceive) {
+                $this->handleToReceive($toReceive, $transactionId);
+            }
+
+        }else {
+            throw new Exception(json_encode($transaction));
         }
 
-        if($toReceive) {
-            foreach ($toReceive as $item) {
-                $data['to_receives'][] = [
-                    'method' => $item[5],
-                    'channel' => $item[6],
-                    'currency_id' => $this->getCurrencyId($item[3]),
-                    'master_agent_id' => intval($item[9]),
-                    'amount' => $item[4],
-                ];
-            }
-        }
 
         return $this->request('/api/v1/remittance/create', 'post', $data);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception|Throwable
      */
     public function getCurrencyId(string $code): int
     {
@@ -89,11 +82,11 @@ class TransactionService extends BaseService
                 return $currency['id'];
             }
         }
-        return throw new \Exception('Currency not found');
+        return throw new Exception('Currency not found');
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception|Throwable
      */
     public function findEntity(int $entityId): array|null
     {
@@ -141,11 +134,63 @@ class TransactionService extends BaseService
         return $payment;
     }
 
-    private function parseDate($value)
+    private function parseDate($value): \DateTime
     {
         if (is_numeric($value)) {
             return ExcelDate::excelToDateTimeObject($value);
         }
         return $value;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    private function handleToSend(array $toSend, int $transactionId):void
+    {
+        foreach ($toSend as $item) {
+            $toSendItem = [
+                'method' => $item[5],
+                'channel' => $item[6],
+                'send_currency_id' => $this->getCurrencyId($item[3]),
+                'amount' => $item[4],
+                'master_agent_id' => intval($item[9]),
+            ];
+            if($toSendItem['channel'] === 'debt') {
+                $toSendItem['cost_rate'] = $item[10];
+            }
+             $res = $this->request(
+                "/api/v1/transactions/$transactionId/payments/send",
+                'post',
+                $toSendItem
+            );
+            if(isset($res['errors'])) {
+                throw new Exception(json_encode($res));
+            }
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
+    private function handleToReceive(array $toReceive, int $transactionId):void
+    {
+        foreach ($toReceive as $item) {
+            $toReceiveItem = [
+                'method' => $item[5],
+                'channel' => $item[6],
+                'currency_id' => $this->getCurrencyId($item[3]),
+                'master_agent_id' => intval($item[9]),
+                'amount' => $item[4],
+            ];
+
+            $res = $this->request(
+                "/api/v1/transactions/$transactionId/payments/receive",
+                'post',
+                $toReceiveItem
+            );
+            if(isset($res['errors'])) {
+                throw new Exception(json_encode($res));
+            }
+        }
     }
 }
