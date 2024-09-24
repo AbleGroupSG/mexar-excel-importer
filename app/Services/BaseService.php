@@ -69,6 +69,25 @@ class BaseService
         });
     }
 
+    /**
+     * @throws Exception|Throwable
+     */
+    public function getCurrencyId(string $code): int
+    {
+        $list = $this->request('/api/v1/stock/currencies');
+
+        if(!isset($list['data'])) {
+            logger()->error('Currency list is empty', ['response' => $list]);
+            throw new Exception('Currency list is empty');
+        }
+        foreach ($list['data'] as $currency) {
+            if($currency['code'] === $code) {
+                return $currency['id'];
+            }
+        }
+        return throw new Exception('Currency not found');
+    }
+
     public function removeEmptyRows(array $data):array
     {
         foreach ($data as $key => $row) {

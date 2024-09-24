@@ -22,13 +22,14 @@ class ExcelImport implements WithMultipleSheets
     {
         return [
             0 => new TransactionsImport(),
-            1 => new EntitiesImport(),
-            2 => new UsersImport(),
-            3 => new AccountsImport(),
-            4 => new BanksImport(),
-            5 => new PlatformsImport(),
-            6 => new PaymentsImport(),
-            7 => new MasterAgentImport(),
+            1 => new CurrencyImport(),
+            2 => new EntitiesImport(),
+            3 => new UsersImport(),
+            4 => new AccountsImport(),
+            5 => new BanksImport(),
+            6 => new PlatformsImport(),
+            7 => new PaymentsImport(),
+            8 => new MasterAgentImport(),
         ];
     }
 }

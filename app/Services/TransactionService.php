@@ -69,29 +69,33 @@ class TransactionService extends BaseService
         return $this->request('/api/v1/remittance/create', 'post', $data);
     }
 
+
     /**
      * @throws Exception|Throwable
      */
-    public function getCurrencyId(string $code): int
+    public function findEntity(int|string $entityInfo): array|null
     {
-        $list = $this->request('/api/v1/stock/currencies');
-
-        foreach ($list['data'] as $currency) {
-            if($currency['code'] === $code) {
-                return $currency['id'];
-            }
+        if (is_numeric($entityInfo) && (string)(int)$entityInfo === (string)$entityInfo) {
+            $entityInfo = (int)$entityInfo;
         }
-        return throw new Exception('Currency not found');
-    }
-
-    /**
-     * @throws Exception|Throwable
-     */
-    public function findEntity(int $entityId): array|null
-    {
-        $entity = $this->request('/api/v1/crm/entities/'.$entityId);
-        if (isset($entity['data'])) {
-            return $entity['data'];
+        if(is_int($entityInfo)) {
+            $entity = $this->request('/api/v1/crm/entities/'.$entityInfo);
+            if (isset($entity['data'])) {
+                return $entity['data'];
+            }
+        }else{
+            $entities = $this->request('/api/v1/crm/entities', 'get', ['q' => $entityInfo]);
+            if (isset($entities['data'])) {
+                foreach ($entities['data'] as $entity) {
+                    if ($entity['entity_type'] === 'individual' && $entity['first_name'] === $entityInfo) {
+                        return $entity;
+                    }
+                    if ($entity['entity_type'] === 'corporate' && $entity['name'] === $entityInfo) {
+                        return $entity;
+                    }
+                }
+                return null;
+            }
         }
         return null;
     }

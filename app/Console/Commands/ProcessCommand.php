@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Imports\ExcelImport;
 use App\Services\AccountService;
 use App\Services\BankService;
+use App\Services\CurrencyService;
 use App\Services\EntitiesService;
 use App\Services\MasterAgentService;
 use App\Services\PlatformService;
@@ -24,16 +25,18 @@ class ProcessCommand extends Command
         $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
 
-        $this->selectDepartmentID();
+
+//        $this->selectDepartmentID();
 
         $transactionsInfo = $data[0]->slice(1);
-        $entitiesInfo = $data[1]->slice(1);
-        $usersInfo = $data[2]->slice(1);
-        $accounts = $data[3]->slice(1);
-        $banks = $data[4]->slice(1);
-        $platforms = $data[5]->slice(1);
-        $payments = $data[6]->slice(1);
-        $masterAgent = $data[7]->slice(1);
+        $currencyInfo = $data[1]->slice(1);
+        $entitiesInfo = $data[2]->slice(1);
+        $usersInfo = $data[3]->slice(1);
+        $accounts = $data[4]->slice(1);
+        $banks = $data[5]->slice(1);
+        $platforms = $data[6]->slice(1);
+        $payments = $data[7]->slice(1);
+        $masterAgent = $data[8]->slice(1);
 
         $dataSources = [
             'Entities Info'     => ['processEntities', [$entitiesInfo->toArray()]],
@@ -106,6 +109,32 @@ class ProcessCommand extends Command
     private function processData($function, array $parameters): void
     {
         call_user_func_array([$this, $function], $parameters);
+    }
+
+    public function processCurrencies(array $currenciesInfo): void
+    {
+        $service = new CurrencyService();
+        $currenciesInfo = $service->removeEmptyRows($currenciesInfo);
+
+        $this->info('Processing currencies');
+        $progressBar = $this->output->createProgressBar(sizeof($currenciesInfo));
+        $progressBar->start();
+
+        foreach ($currenciesInfo as $currencyInfo) {
+//            try {
+                $departmentId = Cache::get('departmentId', 1);
+                $service->createCurrency($currencyInfo, $departmentId);
+//            }catch (\Exception $e) {
+//                logger()->error('Error processing currency: ' . $e->getMessage(), $currencyInfo);
+//                continue;
+//            } catch (\Throwable $e) {
+//                logger()->error('Error processing currency: ' . $e->getMessage(), $currencyInfo);
+//                continue;
+//            }
+            $progressBar->advance();
+        }
+        $progressBar->finish();
+        $this->output->newLine();
     }
 
 
