@@ -13,16 +13,18 @@ use App\Services\UserService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpSchool\CliMenu\Builder\CliMenuBuilder;
+use PhpSchool\CliMenu\CliMenu;
 
 class ProcessCommand extends Command
 {
     protected $signature = 'process.excel';
     public function handle(): void
     {
-
-        Cache::forget('token');
         $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
+
+        $this->selectDepartmentID();
 
         $transactionsInfo = $data[0]->slice(1);
         $entitiesInfo = $data[1]->slice(1);
@@ -33,15 +35,79 @@ class ProcessCommand extends Command
         $payments = $data[6]->slice(1);
         $masterAgent = $data[7]->slice(1);
 
-        $this->processEntities($entitiesInfo->toArray());
-        $this->processUsers($usersInfo->toArray());
-        $this->processMasterAgent($masterAgent->toArray());
-        $this->processTransactions($transactionsInfo->toArray(), $payments->toArray());
-        $this->processBank($banks->toArray());
-        $this->processPlatforms($platforms->toArray());
-        $this->processAccounts($accounts->toArray());
+        $dataSources = [
+            'Entities Info'     => ['processEntities', [$entitiesInfo->toArray()]],
+            'Users Info'        => ['processUsers', [$usersInfo->toArray()]],
+            'Master Agent'      => ['processMasterAgent', [$masterAgent->toArray()]],
+            'Transactions Info' => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray()]],
+            'Accounts'          => ['processAccounts', [$accounts->toArray()]],
+            'Banks'             => ['processBank', [$banks->toArray()]],
+            'Platforms'         => ['processPlatforms', [$platforms->toArray()]],
+        ];
+
+        $this->showAndProcessSheetsOptions($dataSources);
 
     }
+
+    private function selectDepartmentID(): void
+    {
+        $menu = (new CliMenuBuilder)
+            ->setTitle('Select department ID:')
+            ->addRadioItem('Departments 1', function(CliMenu $menu) {
+                Cache::put('departmentId', 1, now()->addDay());
+                $menu->close();
+            })
+            ->addRadioItem('Departments 2', function(CliMenu $menu) {
+                Cache::put('departmentId', 2, now()->addDay());
+                $menu->close();
+            })
+            ->addRadioItem('Departments 3', function(CliMenu $menu) {
+                Cache::put('departmentId', 3, now()->addDay());
+                $menu->close();
+            })
+            ->disableDefaultItems()
+            ->build();
+
+        $menu->open();
+    }
+
+    private function showAndProcessSheetsOptions(array $dataSources): void
+    {
+        $selectedOptions = [];
+
+        $menuBuilder = new CliMenuBuilder;
+        $menuBuilder->setTitle('Choose Data to Import (Multiple Selection Allowed)');
+
+        foreach ($dataSources as $name => $data) {
+            $menuBuilder->addCheckboxItem($name, function(CliMenu $menu) use (&$selectedOptions, $name) {
+                $selectedOptions[] = $name;
+            });
+        }
+
+        $menuBuilder->addItem('Confirm Selection', function(CliMenu $menu) use (&$selectedOptions, $dataSources) {
+            foreach ($selectedOptions as $selected) {
+                [$function, $parameters] = $dataSources[$selected];
+                $this->processData($function, $parameters);
+            }
+
+            $this->newLine();
+            $this->output->success('Processing completed');
+//            $this->info('Processing completed');
+            $selectedOptions = [];
+        });
+
+        $menuBuilder->disableDefaultItems();
+
+        $menu = $menuBuilder->build();
+        $menu->open();
+    }
+
+
+    private function processData($function, array $parameters): void
+    {
+        call_user_func_array([$this, $function], $parameters);
+    }
+
 
     public function processEntities(array $entitiesInfo): void
     {
@@ -225,6 +291,4 @@ class ProcessCommand extends Command
         $progressBar->finish();
         $this->output->newLine();
     }
-
-
 }

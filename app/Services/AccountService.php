@@ -69,7 +69,7 @@ class AccountService extends BaseService
         return match ($accountType) {
             'app' => [
                 'account_name' => $row[1],
-                'department_id' => self::DEPARTMENT_ID,
+                'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $accountType,
                 'platform_account_id' => Str::of($row[6])->toString(),
@@ -79,7 +79,7 @@ class AccountService extends BaseService
             ],
             'payable', 'cash' => [
                 'account_name' => $row[1],
-                'department_id' => self::DEPARTMENT_ID,
+                'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $row[2],
                 'entity_id' => $this->getHolderId($row[8]),
@@ -87,7 +87,7 @@ class AccountService extends BaseService
             ],
             'bank' => [
                 'account_name' => $row[1],
-                'department_id' => self::DEPARTMENT_ID,
+                'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $row[2],
                 'bank_id' => $this->getBankId($row[3]),
@@ -98,7 +98,7 @@ class AccountService extends BaseService
             ],
             'crypto' => [
                 'account_name' => $row[1],
-                'department_id' => self::DEPARTMENT_ID,
+                'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $row[2],
                 'platform_id' => $this->getPlatformId($row[5]),

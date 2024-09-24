@@ -21,13 +21,12 @@ class TransactionService extends BaseService
         [$toSend, $toReceive] = $this->preparePayments($payments, $transaction[0]);
 
         if($this->isDateColumn($transaction[1])) {
-////            TODO transaction date doesnt use anywhere
             $transaction[1] = $this->parseDate($transaction[1])->format('Y-m-d');
         }
 
         $data = [
-            'destination_country_id' => self::SG_COUNTRY_ID,
-            'department_id' => self::DEPARTMENT_ID,
+            'destination_country_id' => $this->getDepartmentId(),
+            'department_id' => $this->getDepartmentId(),
             'entity_id' => $entity['id'],
             'kyc_screen' => 0,
             'trade_date' => $transaction[1],

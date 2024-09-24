@@ -33,7 +33,7 @@ class MasterAgentService extends BaseService
                     $groupedEntities[] = $currentEntity;
                 }
                 $currentEntity = [
-                    'department_id' => self::DEPARTMENT_ID,
+                    'department_id' => $this->getDepartmentId(),
                     'name' => $row[1],
                     'entity_id' => $row[2],
                     'enable_debt_account' => Str::lower($row[3]) === 'yes' ? 1 : 0,

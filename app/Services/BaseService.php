@@ -45,6 +45,10 @@ class BaseService
             throw new Exception($e->getMessage());
         }
     }
+    protected function getDepartmentId(): int
+    {
+        return Cache::get('departmentId', 1);
+    }
 
     private function getToken(): string
     {
