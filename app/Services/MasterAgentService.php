@@ -21,7 +21,7 @@ class MasterAgentService extends BaseService
      * @throws Exception
      * @throws Throwable
      */
-    public function prepareMasterAgent(array $masterAgentsInfo): array
+    public function prepareMasterAgent(array $masterAgentsInfo, array $entitiesInfo): array
     {
         $groupedEntities = [];
         $currentEntity = null;
@@ -32,10 +32,11 @@ class MasterAgentService extends BaseService
                 if ($currentEntity !== null) {
                     $groupedEntities[] = $currentEntity;
                 }
+                $entityId = $this->getEntityIdFromEntitiesSheet($row[2],$entitiesInfo);
                 $currentEntity = [
                     'department_id' => $this->getDepartmentId(),
                     'name' => $row[1],
-                    'entity_id' => $row[2],
+                    'entity_id' => $entityId,
                     'enable_debt_account' => Str::lower($row[3]) === 'yes' ? 1 : 0,
                     'max_debt_credit' => $row[4],
                     'max_debt_debit' => $row[5],

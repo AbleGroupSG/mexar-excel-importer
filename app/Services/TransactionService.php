@@ -16,7 +16,7 @@ class TransactionService extends BaseService
      * @throws Exception
      * @throws Throwable
      */
-    public function createTransaction(array $transaction, array $entity, array $payments): array
+    public function createTransaction(array $transaction, int $entityId, array $payments): array
     {
         [$toSend, $toReceive] = $this->preparePayments($payments, $transaction[0]);
 
@@ -27,7 +27,7 @@ class TransactionService extends BaseService
         $data = [
             'destination_country_id' => $this->getDepartmentId(),
             'department_id' => $this->getDepartmentId(),
-            'entity_id' => $entity['id'],
+            'entity_id' => $entityId,
             'kyc_screen' => 0,
             'trade_date' => $transaction[1],
             'purpose_of_transfer' => 'others',

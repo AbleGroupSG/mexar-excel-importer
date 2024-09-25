@@ -38,39 +38,36 @@ class ProcessCommand extends Command
         $payments = $data[7]->slice(1);
         $masterAgent = $data[8]->slice(1);
 
-//        $this->processAccounts($accounts->toArray());
 
         $dataSources = [
             'Users Info'          => ['processUsers', [$usersInfo->toArray()]],
             'Entities Info'       => ['processEntities', [$entitiesInfo->toArray()]],
             'Banks'               => ['processBank', [$banks->toArray()]],
             'Department Currency' => ['processCurrencies', [$currencyInfo->toArray()]],
-            'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray()]],
+            'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray(), $entitiesInfo->toArray()]],
             'Platforms'           => ['processPlatforms', [$platforms->toArray()]],
             'Accounts'            => ['processAccounts', [$accounts->toArray()]],
-            'Transactions Info'   => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray()]],
+            'Transactions Info'   => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray(), $entitiesInfo->toArray()]],
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);
 
     }
 
-    private function selectDepartmentID(): void
+    private function  selectDepartmentID(): void
     {
-        $menu = (new CliMenuBuilder)
-            ->setTitle('Select department ID:')
-            ->addRadioItem('Departments 1', function(CliMenu $menu) {
-                Cache::put('departmentId', 1, now()->addDay());
+        $departments = config('mexar.departments');
+        $menuBuilder = (new CliMenuBuilder)
+            ->setTitle('Select department ID:');
+
+        foreach ($departments as $departmentId) {
+            $menuBuilder->addRadioItem('Department '. $departmentId, function(CliMenu $menu) use ($departmentId) {
+                Cache::put('departmentId', (int) $departmentId, now()->addDay());
                 $menu->close();
-            })
-            ->addRadioItem('Departments 2', function(CliMenu $menu) {
-                Cache::put('departmentId', 2, now()->addDay());
-                $menu->close();
-            })
-            ->addRadioItem('Departments 3', function(CliMenu $menu) {
-                Cache::put('departmentId', 3, now()->addDay());
-                $menu->close();
-            })
+            });
+        }
+
+        $menu = $menuBuilder
             ->disableDefaultItems()
             ->build();
 
@@ -183,11 +180,12 @@ class ProcessCommand extends Command
         $this->output->newLine();
     }
 
-    public function processTransactions(array $transactionsInfo, array $payments): void
+    public function processTransactions(array $transactionsInfo, array $payments, array $entitiesInfo): void
     {
         $service = new TransactionService();
         $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
         $payments = $service->removeEmptyRows($payments);
+        $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
 
         $this->info('Processing transactions');
         $progressBar = $this->output->createProgressBar(sizeof($transactionsInfo));
@@ -197,12 +195,13 @@ class ProcessCommand extends Command
                 logger()->error('Entity id is empty for transaction', $transaction);
             }
             try {
-                $entity = $service->findEntity($transaction[10]);
-                if(!$entity) {
+                $entityId = $service->getEntityIdFromEntitiesSheet($transaction[10], $entitiesInfo);
+
+                if(!$entityId) {
                     logger()->error('Entity not found for transaction', $transaction);
                     continue;
                 }
-                $service->createTransaction($transaction, $entity, $payments);
+                $service->createTransaction($transaction, $entityId, $payments);
             } catch (\Throwable $e) {
                 logger()->error('Error processing transaction: ' . $e->getMessage(), $transaction);
                 continue;
@@ -274,7 +273,8 @@ class ProcessCommand extends Command
         foreach ($accounts as $accountInfo) {
             try {
                 $service->createAccount($accountInfo);
-            }catch (\Exception $e) {
+
+            } catch (\Throwable $e) {
                 logger()->error('Error processing account: ' . $e->getMessage(), $accountInfo);
                 continue;
             }
@@ -285,14 +285,15 @@ class ProcessCommand extends Command
 
     }
 
-    public function processMasterAgent(array $masterAgentInfo): void
+    public function processMasterAgent(array $masterAgentInfo, array $entitiesInfo): void
     {
         $service = new MasterAgentService();
         $masterAgentInfo = $service->removeEmptyRows($masterAgentInfo);
+        $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
 
         $this->info('Processing master agents');
         try {
-            $masterAgents = $service->prepareMasterAgent($masterAgentInfo);
+            $masterAgents = $service->prepareMasterAgent($masterAgentInfo, $entitiesInfo);
         } catch (\Throwable $e) {
             logger()->error('Error processing master agents: ' . $e->getMessage(), $masterAgentInfo);
             return;

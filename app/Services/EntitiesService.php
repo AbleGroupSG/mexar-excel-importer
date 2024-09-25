@@ -10,7 +10,7 @@ class EntitiesService extends BaseService
      */
     public function findOrCreateEntity(array $data): array
     {
-        $q = $data[1] === 'individual' ? $data[4] : $data[2];
+        $q = $data[1] === 'individual' ? $data[3] : $data[2];
         $list = $this->getEntitiesList($q);
         if(!empty($list)) {
             foreach ($list as $item) {

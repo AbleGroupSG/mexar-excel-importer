@@ -110,4 +110,27 @@ class BaseService
     {
         return floatval(str_replace(',', '.', $value));
     }
+
+    /**
+     * @throws Throwable
+     */
+    public function getEntityIdFromEntitiesSheet(int|null $entityId, array $entitiesInfo): int
+    {
+        if ($entityId === null) {
+            throw new Exception('Entity ID for master agent is empty');
+        }
+        $service = new EntitiesService();
+        $row = [];
+        foreach ($entitiesInfo as $entity) {
+            if ((int) $entity[0] === $entityId) {
+                $row = $entity;
+                break;
+            }
+        }
+        if(empty($row)) {
+            throw new Exception('Entity ID for master agent is not found in entities sheet');
+        }
+        $entity = $service->findOrCreateEntity($row);
+        return $entity['id'];
+    }
 }

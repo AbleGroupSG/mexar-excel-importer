@@ -29,34 +29,39 @@ class AccountService extends BaseService
     /**
      * @throws \Throwable
      */
-    public function prepareAccounts(array $accountsInfo):array
+    public function prepareAccounts(array $accountsInfo): array
     {
         $groupedAccounts = [];
         $currentAccount = null;
 
         foreach ($accountsInfo as $row) {
-            if (is_numeric($row[0])) {
+            try {
+                if (is_numeric($row[0])) {
+                    if ($currentAccount !== null) {
+                        $groupedAccounts[] = $currentAccount;
+                    }
+                    $currentAccount = $this->getCurrentAccount($row);
+                }
+
                 if ($currentAccount !== null) {
-                    $groupedAccounts[] = $currentAccount;
+                    if ($currencyId = $this->getCurrencyId($row[10])) {
+                        $currentAccount['balances'][] = [
+                            'currency_id' => $currencyId,
+                            'balance' => $this->handleCellFormat($row[11]),
+                            'average_cost' => $this->handleCellFormat($row[12])
+                        ];
+                    }
                 }
-                $currentAccount = $this->getCurrentAccount($row);
-
-            }
-
-            if ($currentAccount !== null) {
-                if ($currencyId = $this->getCurrencyId($row[10])) {
-                    $currentAccount['balances'][] = [
-                        'currency_id' => $currencyId,
-                        'balance' => $this->handleCellFormat($row[11]),
-                        'average_cost' => $this->handleCellFormat($row[12])
-                    ];
-                }
+            } catch (\Exception $e) {
+                logger()->error($e->getMessage(), ['row' => $row]);
+                continue;
             }
         }
 
         if ($currentAccount !== null) {
             $groupedAccounts[] = $currentAccount;
         }
+
         return $groupedAccounts;
     }
 
