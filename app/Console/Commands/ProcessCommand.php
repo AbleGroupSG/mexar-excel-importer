@@ -22,6 +22,7 @@ class ProcessCommand extends Command
     protected $signature = 'process.excel';
     public function handle(): void
     {
+        Cache::forget('token');
         $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
 
