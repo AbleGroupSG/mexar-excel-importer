@@ -30,9 +30,9 @@ class ProcessCommand extends Command
         $transactionsInfo = $data[0]->slice(1);
         $currencyInfo = $data[1]->slice(1);
         $entitiesInfo = $data[2]->slice(1);
+        $banks = $data[5]->slice(1);
         $usersInfo = $data[3]->slice(1);
         $accounts = $data[4]->slice(1);
-        $banks = $data[5]->slice(1);
         $platforms = $data[6]->slice(1);
         $payments = $data[7]->slice(1);
         $masterAgent = $data[8]->slice(1);
@@ -40,14 +40,14 @@ class ProcessCommand extends Command
 //        $this->processAccounts($accounts->toArray());
 
         $dataSources = [
-            'Entities Info'       => ['processEntities', [$entitiesInfo->toArray()]],
             'Users Info'          => ['processUsers', [$usersInfo->toArray()]],
-            'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray()]],
-            'Department Currency' => ['processCurrencies', [$currencyInfo->toArray()]],
-            'Transactions Info'   => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray()]],
-            'Accounts'            => ['processAccounts', [$accounts->toArray()]],
+            'Entities Info'       => ['processEntities', [$entitiesInfo->toArray()]],
             'Banks'               => ['processBank', [$banks->toArray()]],
+            'Department Currency' => ['processCurrencies', [$currencyInfo->toArray()]],
+            'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray()]],
             'Platforms'           => ['processPlatforms', [$platforms->toArray()]],
+            'Accounts'            => ['processAccounts', [$accounts->toArray()]],
+            'Transactions Info'   => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray()]],
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);

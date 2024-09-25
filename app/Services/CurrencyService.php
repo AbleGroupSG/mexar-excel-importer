@@ -29,12 +29,10 @@ class CurrencyService extends BaseService
         if (isset($res['errors'])) {
             $errors = $res['errors'];
             foreach ($errors as $error) {
-                foreach ($error as $message) {
-                    logger()->error(
-                        'Error creating currency',
-                        ['message' => $message, 'currency_id' => $payload['currency_id'],'currency' => $row[0]],
-                    );
-                }
+                logger()->error(
+                    'Error creating currency',
+                    ['message' => $error['message'], 'currency_id' => $payload['currency_id'],'currency' => $row[0]],
+                );
             }
         }
     }
