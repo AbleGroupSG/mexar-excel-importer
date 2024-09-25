@@ -72,10 +72,12 @@ class BaseService
     /**
      * @throws Exception|Throwable
      */
-    public function getCurrencyId(string $code): int
+    public function getCurrencyId(string|null $code): int|null
     {
+        if($code === null) {
+            return null;
+        }
         $list = $this->request('/api/v1/stock/currencies');
-
         if(!isset($list['data'])) {
             logger()->error('Currency list is empty', ['response' => $list]);
             throw new Exception('Currency list is empty');
@@ -102,5 +104,10 @@ class BaseService
             }
         }
         return $data;
+    }
+
+    protected function handleCellFormat(mixed $value): mixed
+    {
+        return floatval(str_replace(',', '.', $value));
     }
 }

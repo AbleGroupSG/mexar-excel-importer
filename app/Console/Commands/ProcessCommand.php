@@ -25,8 +25,7 @@ class ProcessCommand extends Command
         $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
 
-
-//        $this->selectDepartmentID();
+        $this->selectDepartmentID();
 
         $transactionsInfo = $data[0]->slice(1);
         $currencyInfo = $data[1]->slice(1);
@@ -38,14 +37,17 @@ class ProcessCommand extends Command
         $payments = $data[7]->slice(1);
         $masterAgent = $data[8]->slice(1);
 
+//        $this->processAccounts($accounts->toArray());
+
         $dataSources = [
-            'Entities Info'     => ['processEntities', [$entitiesInfo->toArray()]],
-            'Users Info'        => ['processUsers', [$usersInfo->toArray()]],
-            'Master Agent'      => ['processMasterAgent', [$masterAgent->toArray()]],
-            'Transactions Info' => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray()]],
-            'Accounts'          => ['processAccounts', [$accounts->toArray()]],
-            'Banks'             => ['processBank', [$banks->toArray()]],
-            'Platforms'         => ['processPlatforms', [$platforms->toArray()]],
+            'Entities Info'       => ['processEntities', [$entitiesInfo->toArray()]],
+            'Users Info'          => ['processUsers', [$usersInfo->toArray()]],
+            'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray()]],
+            'Department Currency' => ['processCurrencies', [$currencyInfo->toArray()]],
+            'Transactions Info'   => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray()]],
+            'Accounts'            => ['processAccounts', [$accounts->toArray()]],
+            'Banks'               => ['processBank', [$banks->toArray()]],
+            'Platforms'           => ['processPlatforms', [$platforms->toArray()]],
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);
@@ -121,16 +123,13 @@ class ProcessCommand extends Command
         $progressBar->start();
 
         foreach ($currenciesInfo as $currencyInfo) {
-//            try {
+            try {
                 $departmentId = Cache::get('departmentId', 1);
                 $service->createCurrency($currencyInfo, $departmentId);
-//            }catch (\Exception $e) {
-//                logger()->error('Error processing currency: ' . $e->getMessage(), $currencyInfo);
-//                continue;
-//            } catch (\Throwable $e) {
-//                logger()->error('Error processing currency: ' . $e->getMessage(), $currencyInfo);
-//                continue;
-//            }
+            } catch (\Throwable $e) {
+                logger()->error('Error processing currency: ' . $e->getMessage(), $currencyInfo);
+                continue;
+            }
             $progressBar->advance();
         }
         $progressBar->finish();
@@ -150,7 +149,7 @@ class ProcessCommand extends Command
         foreach ($entitiesInfo as $entityInfo) {
             try {
                 $service->findOrCreateEntity($entityInfo);
-            }catch (\Exception $e) {
+            }catch (\Throwable $e) {
                 logger()->error('Error processing entity: ' . $e->getMessage(), $entityInfo);
                 continue;
             }
@@ -173,7 +172,7 @@ class ProcessCommand extends Command
         foreach ($usersInfo as $userInfo) {
             try {
                 $service->createUser($userInfo);
-            }catch (\Exception $e) {
+            }catch (\Throwable $e) {
                 logger()->error('Error processing user: ' . $e->getMessage(), $userInfo);
                 continue;
             }
@@ -203,9 +202,6 @@ class ProcessCommand extends Command
                     continue;
                 }
                 $service->createTransaction($transaction, $entity, $payments);
-            }catch (\Exception $e) {
-                logger()->error('Error processing transaction: ' . $e->getMessage(), $transaction);
-                continue;
             } catch (\Throwable $e) {
                 logger()->error('Error processing transaction: ' . $e->getMessage(), $transaction);
                 continue;
@@ -227,7 +223,7 @@ class ProcessCommand extends Command
         foreach ($banks as $bank) {
             try {
                 $service->createBank($bank);
-            }catch (\Exception $e) {
+            }catch (\Throwable $e) {
                 logger()->error('Error processing bank: ' . $e->getMessage(), $bank);
                 continue;
             }
@@ -249,7 +245,7 @@ class ProcessCommand extends Command
         foreach ($platformsInfo as $platformInfo) {
             try {
                 $service->createPlatform($platformInfo);
-            }catch (\Exception $e) {
+            }catch (\Throwable $e) {
                 logger()->error('Error processing platform: ' . $e->getMessage(), $platformInfo);
                 continue;
             }
@@ -267,7 +263,7 @@ class ProcessCommand extends Command
         $this->info('Processing accounts');
         try {
             $accounts = $service->prepareAccounts($accountsInfo);
-        }catch (\Exception $e) {
+        } catch (\Throwable $e) {
             logger()->error('Error processing accounts: ' . $e->getMessage(), $accountsInfo);
             return;
         }
@@ -296,9 +292,6 @@ class ProcessCommand extends Command
         $this->info('Processing master agents');
         try {
             $masterAgents = $service->prepareMasterAgent($masterAgentInfo);
-        }catch (\Exception $e) {
-            logger()->error('Error processing master agents: ' . $e->getMessage(), $masterAgentInfo);
-            return;
         } catch (\Throwable $e) {
             logger()->error('Error processing master agents: ' . $e->getMessage(), $masterAgentInfo);
             return;
@@ -308,9 +301,6 @@ class ProcessCommand extends Command
         foreach ($masterAgents as $masterAgent) {
             try {
                 $service->createMasterAgent($masterAgent);
-            }catch (\Exception $e) {
-                logger()->error('Error processing master agent: ' . $e->getMessage(), $masterAgent);
-                continue;
             } catch (\Throwable $e) {
                 logger()->error('Error processing master agent: ' . $e->getMessage(), $masterAgent);
                 continue;

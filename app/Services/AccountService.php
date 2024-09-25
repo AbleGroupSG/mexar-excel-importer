@@ -8,7 +8,7 @@ class AccountService extends BaseService
 {
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function createAccount(array $payload): void
     {
@@ -19,7 +19,7 @@ class AccountService extends BaseService
                 foreach ($error as $message) {
                     logger()->error(
                         'Error creating account',
-                        ['message' => $message, 'account_name' => $payload['account_name']],
+                        ['message' => $message, 'account' => $payload],
                     );
                 }
             }
@@ -27,7 +27,7 @@ class AccountService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function prepareAccounts(array $accountsInfo):array
     {
@@ -47,8 +47,8 @@ class AccountService extends BaseService
                 if ($currencyId = $this->getCurrencyId($row[10])) {
                     $currentAccount['balances'][] = [
                         'currency_id' => $currencyId,
-                        'balance' => $row[11],
-                        'average_cost' => $row[12]
+                        'balance' => $this->handleCellFormat($row[11]),
+                        'average_cost' => $this->handleCellFormat($row[12])
                     ];
                 }
             }
@@ -61,7 +61,7 @@ class AccountService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     private function getCurrentAccount(array $row):array
     {
@@ -81,7 +81,7 @@ class AccountService extends BaseService
                 'account_name' => $row[1],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
-                'account_type' => $row[2],
+                'account_type' => $accountType,
                 'entity_id' => $this->getHolderId($row[8]),
                 'operator_user_id' => $this->getOperator($row[9]),
             ],
@@ -89,7 +89,7 @@ class AccountService extends BaseService
                 'account_name' => $row[1],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
-                'account_type' => $row[2],
+                'account_type' => $accountType,
                 'bank_id' => $this->getBankId($row[3]),
                 'account_number' => $row[4],
                 'entity_id' => $this->getHolderId($row[8]),
@@ -100,7 +100,7 @@ class AccountService extends BaseService
                 'account_name' => $row[1],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
-                'account_type' => $row[2],
+                'account_type' => $accountType,
                 'platform_id' => $this->getPlatformId($row[5]),
                 'crypto_wallet_address' => $row[7],
                 'entity_id' => $this->getHolderId($row[8]),
@@ -109,13 +109,13 @@ class AccountService extends BaseService
             ],
 //            'virtual' => [] // TODO: implement virtual account
 //            'temporary' => [] // TODO: implement temporary account
-            default => throw new \Exception('Invalid account type', 400),
+            default => throw new \Exception('Invalid account type . ' . $accountType, 400),
         };
 
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     private function getBankId(string|null $name):int|null
     {
@@ -131,7 +131,7 @@ class AccountService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     private function getPlatformId(string|null $name ):int|null
     {
@@ -146,7 +146,7 @@ class AccountService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     private function getHolderId(string|null $name ):int|null
     {
@@ -186,7 +186,7 @@ class AccountService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function getOperator(string $username): int
     {
@@ -201,16 +201,5 @@ class AccountService extends BaseService
         throw new \Exception('Operator not found', 404);
     }
 
-    /**
-     * @throws \Exception
-     */
-    private function getCurrencyId(string|null $currency):int|null
-    {
-        if($currency === null) {
-            return null;
-        }
-        $service = new TransactionService();
-        return $service->getCurrencyId($currency);
-    }
 
 }

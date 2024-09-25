@@ -6,6 +6,7 @@ class EntitiesService extends BaseService
 {
     /**
      * @throws \Exception
+     * @throws \Throwable
      */
     public function findOrCreateEntity(array $data): array
     {
@@ -25,7 +26,7 @@ class EntitiesService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Exception|\Throwable
      */
     private function getEntitiesList(string $q): array
     {
@@ -34,7 +35,7 @@ class EntitiesService extends BaseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Exception|\Throwable
      */
     private function createEntity(array $data):array
     {
@@ -42,8 +43,8 @@ class EntitiesService extends BaseService
         if($entityType === 'individual') {
             $payload = [
                 'entity_type' => 'individual',
-                'first_name' => $data[4],
-                'last_name' => $data[5],
+                'first_name' => $data[3],
+                'last_name' => $data[4],
             ];
         }else {
             $payload = [

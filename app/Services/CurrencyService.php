@@ -26,7 +26,6 @@ class CurrencyService extends BaseService
             'entity_daily_limit' => $row[9], // 'Entity Daily Limit',
         ];
         $res = $this->request("/api/v1/departments/$departmentID/currencies", 'post', $payload);
-        dump($res,);
         if (isset($res['errors'])) {
             $errors = $res['errors'];
             foreach ($errors as $error) {
