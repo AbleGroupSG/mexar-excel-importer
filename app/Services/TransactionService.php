@@ -70,6 +70,18 @@ class TransactionService extends BaseService
         return $this->request('/api/v1/remittance/create', 'post', $data);
     }
 
+    /**
+     * @throws Throwable
+     */
+    public function completeTransaction(int $transactionId): void
+    {
+        $res = $this->request("/api/v1/transactions/$transactionId/actions/complete", 'post');
+        dump($res);
+        if (isset($res['errors'])) {
+            throw new \Exception(json_encode($res['errors']));
+        }
+    }
+
 
     /**
      * @throws Exception|Throwable

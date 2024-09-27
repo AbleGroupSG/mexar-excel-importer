@@ -27,6 +27,7 @@ class ProcessCommand extends Command
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
 
         $this->selectDepartmentID();
+        $this->completeTransactionOption();
 
         $transactionsInfo = $data[0]->slice(1);
         $currencyInfo = $data[1]->slice(1);
@@ -37,7 +38,6 @@ class ProcessCommand extends Command
         $platforms = $data[6]->slice(1);
         $payments = $data[7]->slice(1);
         $masterAgent = $data[8]->slice(1);
-
 
         $dataSources = [
             'Users Info'          => ['processUsers', [$usersInfo->toArray()]],
@@ -66,6 +66,27 @@ class ProcessCommand extends Command
                 $menu->close();
             });
         }
+
+        $menu = $menuBuilder
+            ->disableDefaultItems()
+            ->build();
+
+        $menu->open();
+    }
+
+    private function  completeTransactionOption(): void
+    {
+        $menuBuilder = (new CliMenuBuilder)
+            ->setTitle('Complete transaction after creating');
+
+        $menuBuilder->addRadioItem('Yes', function(CliMenu $menu) {
+            Cache::put('completeTransaction', true, now()->addDay());
+            $menu->close();
+        });
+        $menuBuilder->addRadioItem('No', function(CliMenu $menu) {
+            Cache::put('completeTransaction', false, now()->addDay());
+            $menu->close();
+        });
 
         $menu = $menuBuilder
             ->disableDefaultItems()
@@ -201,7 +222,15 @@ class ProcessCommand extends Command
                     logger()->error('Entity not found for transaction', $transaction);
                     continue;
                 }
-                $service->createTransaction($transaction, $entityId, $payments);
+                $res = $service->createTransaction($transaction, $entityId, $payments);
+
+                if(Cache::get('completeTransaction', false)) {
+                    if(!isset($res['transaction']['id'])) {
+                        throw new \Exception('Cannot complete transaction, transaction id is empty');
+                    }
+                    $service->completeTransaction($res['transaction']['id']);
+                }
+
             } catch (\Throwable $e) {
                 logger()->error('Error processing transaction: ' . $e->getMessage(), $transaction);
                 continue;
