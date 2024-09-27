@@ -32,6 +32,7 @@ class TransactionService extends BaseService
             'trade_date' => $transaction[1],
             'purpose_of_transfer' => 'others',
             'sale_user_id' => 1,
+            'remark' => $transaction[11] ?? '',
             'process_fee' => [
                 'enable' => 0,
                 'fee' => []
