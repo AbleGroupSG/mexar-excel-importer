@@ -10,12 +10,12 @@ class UserService extends BaseService
     public function createUser(array $userInfo): void
     {
         $payload = [
-            'username' => $userInfo[0],
+            'username' => $userInfo['username'],
             'role' => 'employee',
-            'email' => $userInfo[1],
-            'password' => $userInfo[2],
-            'first_name' => $userInfo[3],
-            'last_name' => $userInfo[4],
+            'email' => $userInfo['email'],
+            'password' => $userInfo['password'],
+            'first_name' => $userInfo['first_name'],
+            'last_name' => $userInfo['last_name'],
 //            'entity_id' => $userInfo[3],
         ];
         $res = $this->request('/api/v1/users', 'post', $payload);
@@ -26,7 +26,7 @@ class UserService extends BaseService
                 foreach ($error as $message) {
                     logger()->error(
                         'Error creating user',
-                        ['message' => $message, 'email' => $userInfo[1], 'username' => $userInfo[0], 'entity_id' => $userInfo[3]],
+                        ['message' => $message, 'email' => $userInfo['email'], 'username' => $userInfo['username']],
                     );
                 }
             }

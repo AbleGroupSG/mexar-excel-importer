@@ -127,7 +127,7 @@ class BaseService
         $service = new EntitiesService();
         $row = [];
         foreach ($entitiesInfo as $entity) {
-            if ((int) $entity[0] === $entityId) {
+            if ((int) $entity['id'] === $entityId) {
                 $row = $entity;
                 break;
             }

@@ -18,14 +18,21 @@ class EntitiesService extends BaseService
      */
     public function findOrCreateEntity(array $data): array
     {
-        $q = $data[1] === 'individual' ? $data[3] : $data[2];
+        $q = $data['entity_type'] === 'individual' ? $data['first_name'] : $data['name'];
         $list = $this->getEntitiesList($q);
         if(!empty($list)) {
             foreach ($list as $item) {
-                if($item['entity_type'] === 'individual' && $item['first_name'] === $data[4] && $item['last_name'] === $data[5]) {
+                if(
+                    $item['entity_type'] === 'individual' &&
+                    $item['first_name'] === $data['first_name'] &&
+                    $item['last_name'] === $data['last_name']
+                ) {
                     return $item;
                 }
-                if($item['entity_type'] === 'corporate' && $item['name'] === $data[2]) {
+                if(
+                    $item['entity_type'] === 'corporate' &&
+                    $item['name'] === $data['name']
+                ) {
                     return $item;
                 }
             }
@@ -49,21 +56,30 @@ class EntitiesService extends BaseService
      */
     private function createEntity(array $data):array
     {
-        $entityType = $data[1];
+        $entityType = $data['entity_type'];
         if($entityType === 'individual') {
             $payload = [
                 'entity_type' => 'individual',
-                'first_name' => $data[3],
-                'last_name' => $data[4],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
             ];
         }else {
             $payload = [
                 'entity_type' => 'corporate',
-                'name' => $data[2],
-                'industry' => $data[3],
+                'name' => $data['name'],
             ];
         }
         $response = $this->request('/api/v1/crm/entities', 'post', $payload);
+
+        if(isset($response['errors'])) {
+            $errors = $response['errors'];
+            foreach ($errors as $error) {
+                logger()->error(
+                    'Error creating entity',
+                    ['message' => $error['message'], 'payload' => $payload],
+                );
+            }
+        }
 
         return $response['data'];
     }

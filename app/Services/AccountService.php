@@ -36,7 +36,7 @@ class AccountService extends BaseService
 
         foreach ($accountsInfo as $row) {
             try {
-                if (is_numeric($row[0])) {
+                if (is_numeric($row['account_id'])) {
                     if ($currentAccount !== null) {
                         $groupedAccounts[] = $currentAccount;
                     }
@@ -44,11 +44,11 @@ class AccountService extends BaseService
                 }
 
                 if ($currentAccount !== null) {
-                    if ($currencyId = $this->getCurrencyId($row[10])) {
+                    if ($currencyId = $this->getCurrencyId($row['balance_currency'])) {
                         $currentAccount['balances'][] = [
                             'currency_id' => $currencyId,
-                            'balance' => $this->handleCellFormat($row[11]),
-                            'average_cost' => $this->handleCellFormat($row[12])
+                            'balance' => $this->handleCellFormat($row['balance']),
+                            'average_cost' => $this->handleCellFormat($row['average_cost'])
                         ];
                     }
                 }
@@ -70,46 +70,46 @@ class AccountService extends BaseService
      */
     private function getCurrentAccount(array $row):array
     {
-        $accountType = Str::lower($row[2]);
+        $accountType = Str::lower($row['account_type']);
         return match ($accountType) {
             'app' => [
-                'account_name' => $row[1],
+                'account_name' => $row['account_name'],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $accountType,
-                'platform_account_id' => Str::of($row[6])->toString(),
-                'platform_id' => $this->getPlatformId($row[5]),
-                'entity_id' => $this->getHolderId($row[8]),
-                'operator_user_id' => $this->getOperator($row[9]),
+                'platform_account_id' => Str::of($row['wallet_address'])->toString(),
+                'platform_id' => $this->getPlatformId($row['app_id']),
+                'entity_id' => $this->getHolderId($row['holder']),
+                'operator_user_id' => $this->getOperator($row['operator']),
             ],
             'payable', 'cash' => [
-                'account_name' => $row[1],
+                'account_name' => $row['account_name'],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $accountType,
-                'entity_id' => $this->getHolderId($row[8]),
-                'operator_user_id' => $this->getOperator($row[9]),
+                'entity_id' => $this->getHolderId($row['holder']),
+                'operator_user_id' => $this->getOperator($row['operator']),
             ],
             'bank' => [
-                'account_name' => $row[1],
+                'account_name' => $row['account_name'],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $accountType,
-                'bank_id' => $this->getBankId($row[3]),
-                'account_number' => $row[4],
-                'entity_id' => $this->getHolderId($row[8]),
-                'operator_user_id' => $this->getOperator($row[9]),
+                'bank_id' => $this->getBankId($row['bank_name']),
+                'account_number' => $row['account_number'],
+                'entity_id' => $this->getHolderId($row['holder']),
+                'operator_user_id' => $this->getOperator($row['operator']),
                 'balances' => []
             ],
             'crypto' => [
-                'account_name' => $row[1],
+                'account_name' => $row['account_name'],
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $accountType,
-                'platform_id' => $this->getPlatformId($row[5]),
-                'crypto_wallet_address' => $row[7],
-                'entity_id' => $this->getHolderId($row[8]),
-                'operator_user_id' => $this->getOperator($row[9]),
+                'platform_id' => $this->getPlatformId($row['platform_name']),
+                'crypto_wallet_address' => $row['wallet_address'],
+                'entity_id' => $this->getHolderId($row['holder']),
+                'operator_user_id' => $this->getOperator($row['operator']),
                 'balances' => []
             ],
 //            'virtual' => [] // TODO: implement virtual account

@@ -29,15 +29,15 @@ class ProcessCommand extends Command
         $this->selectDepartmentID();
         $this->completeTransactionOption();
 
-        $transactionsInfo = $data[0]->slice(1);
-        $currencyInfo = $data[1]->slice(1);
-        $entitiesInfo = $data[2]->slice(1);
-        $banks = $data[5]->slice(1);
-        $usersInfo = $data[3]->slice(1);
-        $accounts = $data[4]->slice(1);
-        $platforms = $data[6]->slice(1);
-        $payments = $data[7]->slice(1);
-        $masterAgent = $data[8]->slice(1);
+        $transactionsInfo = $data[0];
+        $currencyInfo = $data[1];
+        $entitiesInfo = $data[2];
+        $banks = $data[5];
+        $usersInfo = $data[3];
+        $accounts = $data[4];
+        $platforms = $data[6];
+        $payments = $data[7];
+        $masterAgent = $data[8];
 
         $dataSources = [
             'Users Info'          => ['processUsers', [$usersInfo->toArray()]],
@@ -212,11 +212,11 @@ class ProcessCommand extends Command
         $progressBar = $this->output->createProgressBar(sizeof($transactionsInfo));
         $progressBar->start();
         foreach ($transactionsInfo as $transaction) {
-            if (empty($transaction[10])) {
+            if (empty($transaction['entity_id'])) {
                 logger()->error('Entity id is empty for transaction', $transaction);
             }
             try {
-                $entityId = $service->getEntityIdFromEntitiesSheet($transaction[10], $entitiesInfo);
+                $entityId = $service->getEntityIdFromEntitiesSheet($transaction['entity_id'], $entitiesInfo);
 
                 if(!$entityId) {
                     logger()->error('Entity not found for transaction', $transaction);
