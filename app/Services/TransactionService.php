@@ -67,7 +67,7 @@ class TransactionService extends BaseService
         }
 
 
-        return $this->request('/api/v1/remittance/create', 'post', $data);
+        return $transaction;
     }
 
     /**
