@@ -12,11 +12,11 @@ class PlatformService extends BaseService
     public function createPlatform(array $platformInfo): void
     {
         $payload = [
-            'platform_type' => Str::lower($platformInfo[0]),
-            'platform_name' => $platformInfo[1],
-            'status' => $platformInfo[2],
-            'description' => $platformInfo[3],
-            'logo' => $platformInfo[4],
+            'platform_type' => Str::lower($platformInfo['platform_type']),
+            'platform_name' => $platformInfo['platform_name'],
+            'status' => $platformInfo['status'],
+            'description' => $platformInfo['description'],
+            'logo' => $platformInfo['logo'],
         ];
 
         $res = $this->request('/api/v1/data/payments/platforms', 'post', $payload);
@@ -27,7 +27,7 @@ class PlatformService extends BaseService
                 foreach ($error as $message) {
                     logger()->error(
                         'Error creating platform',
-                        ['message' => $message, 'platform_name' => $platformInfo[1]],
+                        ['message' => $message, 'platform_name' => $platformInfo['platform_name']],
                     );
                 }
             }

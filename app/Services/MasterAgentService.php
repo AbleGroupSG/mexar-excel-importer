@@ -28,36 +28,36 @@ class MasterAgentService extends BaseService
         $service = new TransactionService();
 
         foreach ($masterAgentsInfo as $row) {
-            if (isset($row[0]) || isset($row[1])) {
+            if (isset($row['master_agent_id']) || isset($row['name'])) {
                 if ($currentEntity !== null) {
                     $groupedEntities[] = $currentEntity;
                 }
-                $entityId = $this->getEntityIdFromEntitiesSheet($row[2],$entitiesInfo);
+                $entityId = $this->getEntityIdFromEntitiesSheet($row['entity_id'],$entitiesInfo);
                 $currentEntity = [
                     'department_id' => $this->getDepartmentId(),
-                    'name' => $row[1],
+                    'name' => $row['name'],
                     'entity_id' => $entityId,
-                    'enable_debt_account' => Str::lower($row[3]) === 'yes' ? 1 : 0,
-                    'max_debt_credit' => $row[4],
-                    'max_debt_debit' => $row[5],
+                    'enable_debt_account' => Str::lower($row['enable_debt']) === 'yes' ? 1 : 0,
+                    'max_debt_credit' => $row['max_credit'],
+                    'max_debt_debit' => $row['max_debit'],
                     'status' => 'active',
                     'enable_contra' => 1,
-                    'description' => $row[6] ?? '',
+                    'description' => $row['description'] ?? '',
                 ];
             }
 
-            if (!empty($row[7])) {
+            if (!empty($row['debit_currency'])) {
                 $currentEntity['debit'][] = [
-                    'currency_id' => $service->getCurrencyId($row[7]),
-                    'balance' => $this->handleCellFormat($row[8]),
-                    'average_cost' => $this->handleCellFormat($row[9]),
+                    'currency_id' => $service->getCurrencyId($row['debit_currency']),
+                    'balance' => $this->handleCellFormat($row['debit_balance']),
+                    'average_cost' => $this->handleCellFormat($row['debit_average_cost']),
                 ];
             }
-            if (!empty($row[10])) {
+            if (!empty($row['credit_currency'])) {
                 $currentEntity['credit'][] = [
-                    'currency_id' => $service->getCurrencyId($row[10]),
-                    'balance' => $this->handleCellFormat($row[11]),
-                    'average_cost' => $this->handleCellFormat($row[12]),
+                    'currency_id' => $service->getCurrencyId($row['credit_currency']),
+                    'balance' => $this->handleCellFormat($row['credit_balance']),
+                    'average_cost' => $this->handleCellFormat($row['credit_average_cost']),
                 ];
             }
         }

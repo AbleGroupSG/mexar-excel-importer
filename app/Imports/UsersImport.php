@@ -4,8 +4,9 @@ namespace App\Imports;
 
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class UsersImport implements ToCollection
+class UsersImport implements ToCollection, WithHeadingRow
 {
     /**
     * @param Collection $collection

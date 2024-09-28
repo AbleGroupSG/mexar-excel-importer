@@ -18,35 +18,35 @@ class TransactionService extends BaseService
      */
     public function createTransaction(array $transaction, int $entityId, array $payments): array
     {
-        [$toSend, $toReceive] = $this->preparePayments($payments, $transaction[0]);
+        [$toSend, $toReceive] = $this->preparePayments($payments, $transaction['transaction_no']);
 
-        if($this->isDateColumn($transaction[1])) {
-            $transaction[1] = $this->parseDate($transaction[1])->format('Y-m-d');
+        if($this->isDateColumn($transaction['trade_date'])) {
+            $transaction['trade_date'] = $this->parseDate($transaction['trade_date'])->format('Y-m-d');
         }
 
         $data = [
-            'destination_country_id' => $this->getDepartmentId(),
+            'destination_country_id' => $this->getDepartmentId(), // TODO: change to SG_COUNTRY_ID
             'department_id' => $this->getDepartmentId(),
             'entity_id' => $entityId,
             'kyc_screen' => 0,
-            'trade_date' => $transaction[1],
+            'trade_date' => $transaction['trade_date'],
             'purpose_of_transfer' => 'others',
             'sale_user_id' => 1,
-            'remark' => $transaction[11] ?? '',
+            'remark' => $transaction['transaction_remark'] ?? '',
             'process_fee' => [
                 'enable' => 0,
                 'fee' => []
             ],
             'items' => [
                 [
-                    'source_currency_id' => $this->getCurrencyId($transaction[2]),
-                    'target_currency_id' => $this->getCurrencyId($transaction[5]),
-                    'amount' => $transaction[4],
-                    'exchange_rate' => $transaction[8],
-                    'exchange_rate_display' => $transaction[8],
-                    'cost_rate' => $transaction[9],
-                    'cost_rate_display' => $transaction[9],
-                    'calculation_amount' => $transaction[7],
+                    'source_currency_id' => $this->getCurrencyId($transaction['from_currency']),
+                    'target_currency_id' => $this->getCurrencyId($transaction['to_currency']),
+                    'amount' => $transaction['from_amount'],
+                    'exchange_rate' => $transaction['exchange_rate'],
+                    'exchange_rate_display' => $transaction['exchange_rate'],
+                    'cost_rate' => $transaction['cost_rate'],
+                    'cost_rate_display' => $transaction['cost_rate'],
+                    'calculation_amount' => $transaction['to_amount'],
                 ]
             ],
         ];
@@ -55,11 +55,11 @@ class TransactionService extends BaseService
         if(isset($transaction['transaction']['id'])){
             $transactionId = $transaction['transaction']['id'];
             if($toSend) {
-                $this->handleToSend($toSend, $transactionId);
+                $this->handlePayment($toSend, $transactionId, 'send');
             }
 
             if($toReceive) {
-                $this->handleToReceive($toReceive, $transactionId);
+                $this->handlePayment($toReceive, $transactionId, 'receive');
             }
 
         }else {
@@ -76,7 +76,6 @@ class TransactionService extends BaseService
     public function completeTransaction(int $transactionId): void
     {
         $res = $this->request("/api/v1/transactions/$transactionId/actions/complete", 'post');
-        dump($res);
         if (isset($res['errors'])) {
             throw new \Exception(json_encode($res['errors']));
         }
@@ -122,14 +121,14 @@ class TransactionService extends BaseService
     {
         $data = [];
         foreach ($payments as $payment) {
-            if (intval($payment[0]) === $transactionId) {
+            if (intval($payment['transaction_no']) === $transactionId) {
                 $data[] = $payment;
             }
         }
 
         foreach ($data as $key => $value) {
-            if ($this->isDateColumn( (int) $value[1])) {
-                $data[$key][1] = $this->parseDate($value[1])->format('m/d/Y');
+            if ($this->isDateColumn( (int) $value['trade_date'])) {
+                $data[$key]['trade_date'] = $this->parseDate($value['trade_date'])->format('m/d/Y');
             }
         }
 
@@ -141,7 +140,7 @@ class TransactionService extends BaseService
 
     private function getTransactionPayment(array $payments, string $type): array|bool
     {
-        $payment = array_filter($payments, fn($payment) => $payment[2] === $type);
+        $payment = array_filter($payments, fn($payment) => $payment['receivesend'] === $type);
 
         if(empty($payment)) {
             return false;
@@ -161,23 +160,26 @@ class TransactionService extends BaseService
     /**
      * @throws Throwable
      */
-    private function handleToSend(array $toSend, int $transactionId):void
+    private function handlePayment(array $payments, int $transactionId, string $method):void
     {
-        foreach ($toSend as $item) {
-            $toSendItem = [
-                'method' => $item[5],
-                'channel' => $item[6],
-                'send_currency_id' => $this->getCurrencyId($item[3]),
-                'amount' => $item[4],
-                'master_agent_id' => intval($item[9]),
+        foreach ($payments as $item) {
+            $paymentItem = [
+                'method' => $item['payment_method'],
+                'channel' => $item['channel'],
+                'send_currency_id' => $this->getCurrencyId($item['currency']),
+                'amount' => $item['amount'],
+                'master_agent_id' => intval($item['master_agent_id']),
             ];
-            if($toSendItem['channel'] === 'debt') {
-                $toSendItem['cost_rate'] = $item[10];
+
+            if ($method==='send') {
+                if($paymentItem['channel'] === 'debt') {
+                    $paymentItem['cost_rate'] = $item['cost_rate'];
+                }
             }
              $res = $this->request(
-                "/api/v1/transactions/$transactionId/payments/send",
+                "/api/v1/transactions/$transactionId/payments/$method",
                 'post',
-                $toSendItem
+                 $paymentItem
             );
             if(isset($res['errors'])) {
                 throw new Exception(json_encode($res));
@@ -188,7 +190,7 @@ class TransactionService extends BaseService
     /**
      * @throws Throwable
      */
-    private function handleToReceive(array $toReceive, int $transactionId):void
+    private function handleToReceive(array $toReceive, int $transactionId, string $method):void
     {
         foreach ($toReceive as $item) {
             $toReceiveItem = [

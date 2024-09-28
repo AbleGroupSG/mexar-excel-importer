@@ -9,14 +9,14 @@ class BankService extends BaseService
      */
     public function createBank(array $bankInfo): void
     {
-        $countryId = $this->getCountryId($bankInfo[3]);
+        $countryId = $this->getCountryId($bankInfo['country']);
         $payload = [
-            'name' => $bankInfo[0],
-            'status' => $bankInfo[1],
-            'code' => $bankInfo[2],
+            'name' => $bankInfo['bank_name'],
+            'status' => $bankInfo['status'],
+            'code' => $bankInfo['iban'],
             'country_id' => $countryId,
-            'state' => $bankInfo[4],
-            'city' => $bankInfo[5],
+            'state' => $bankInfo['state'],
+            'city' => $bankInfo['city'],
         ];
 
         $res = $this->request('/api/v1/stock/banks', 'post', $payload);
@@ -26,7 +26,7 @@ class BankService extends BaseService
                 foreach ($error as $message) {
                     logger()->error(
                         'Error creating bank',
-                        ['message' => $message, 'name' => $bankInfo[0], 'country' => $bankInfo[3]],
+                        ['message' => $message, 'name' => $bankInfo['bank_name'], 'country' => $bankInfo['country']],
                     );
                 }
             }
