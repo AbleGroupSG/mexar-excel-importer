@@ -5,6 +5,14 @@ namespace App\Services;
 class EntitiesService extends BaseService
 {
     /**
+     * find the entity from the the API response
+     * 
+     * This function will match the following fields:
+     * - entity_type
+     * - first_name if entity_type is individual
+     * - last_name if entity_type is individual
+     * - name if entity_type is corporate
+     * 
      * @throws \Exception
      * @throws \Throwable
      */
@@ -35,6 +43,8 @@ class EntitiesService extends BaseService
     }
 
     /**
+     * API wrapper for create entity via API call
+     * 
      * @throws \Exception|\Throwable
      */
     private function createEntity(array $data):array

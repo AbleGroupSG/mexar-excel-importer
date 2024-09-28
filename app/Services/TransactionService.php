@@ -52,6 +52,10 @@ class TransactionService extends BaseService
         ];
 
         $transaction = $this->request('/api/v1/remittance/create', 'post', $data);
+        logger()->debug('create transaction response:', [            
+            'response'  =>  json_encode($transaction)
+        ]);
+
         if(isset($transaction['transaction']['id'])){
             $transactionId = $transaction['transaction']['id'];
             if($toSend) {
@@ -75,9 +79,17 @@ class TransactionService extends BaseService
      */
     public function completeTransaction(int $transactionId): void
     {
+        // $res = $this->request("/api/v1/transactioins/$transactionId/payments", 'get');
+        // logger()->debug('transaction payments response:', [            
+        //     'response'  =>  json_encode($res)
+        // ]);
+
         $res = $this->request("/api/v1/transactions/$transactionId/actions/complete", 'post');
-        dump($res);
-        if (isset($res['errors'])) {
+        logger()->debug('complete transaction response:', [
+            'transaction_id'    =>  $transactionId,            
+            'response'  =>  json_encode($res)
+        ]);
+        if (isset($res['code'])) {
             throw new \Exception(json_encode($res['errors']));
         }
     }
@@ -174,11 +186,16 @@ class TransactionService extends BaseService
             if($toSendItem['channel'] === 'debt') {
                 $toSendItem['cost_rate'] = $item[10];
             }
-             $res = $this->request(
+            $res = $this->request(
                 "/api/v1/transactions/$transactionId/payments/send",
                 'post',
                 $toSendItem
             );
+
+            logger()->debug('send payment response:', [
+                'payload'   =>  json_encode($toSendItem),
+                'response'  =>  json_encode($res)
+            ]);
             if(isset($res['errors'])) {
                 throw new Exception(json_encode($res));
             }
@@ -204,6 +221,11 @@ class TransactionService extends BaseService
                 'post',
                 $toReceiveItem
             );
+
+            logger()->debug('receive payment response:', [
+                'payload'   =>  json_encode($toReceiveItem),
+                'response'  =>  json_encode($res)
+            ]);
             if(isset($res['errors'])) {
                 throw new Exception(json_encode($res));
             }
