@@ -16,7 +16,7 @@ class TransactionService extends BaseService
      * @throws Exception
      * @throws Throwable
      */
-    public function createTransaction(array $transaction, int $entityId, array $payments): array
+    public function createTransaction(array $transaction, int $entityId, array $payments, array $masterAgents): array
     {
         [$toSend, $toReceive] = $this->preparePayments($payments, $transaction['transaction_no']);
 
@@ -25,7 +25,7 @@ class TransactionService extends BaseService
         }
 
         $data = [
-            'destination_country_id' => $this->getDepartmentId(), // TODO: change to SG_COUNTRY_ID
+            'destination_country_id' => $this->getDepartmentId(), // TODO: change to
             'department_id' => $this->getDepartmentId(),
             'entity_id' => $entityId,
             'kyc_screen' => 0,
@@ -55,11 +55,11 @@ class TransactionService extends BaseService
         if(isset($transaction['transaction']['id'])){
             $transactionId = $transaction['transaction']['id'];
             if($toSend) {
-                $this->handlePayment($toSend, $transactionId, 'send');
+                $this->handlePayment($toSend, $transactionId, 'send', $masterAgents);
             }
 
             if($toReceive) {
-                $this->handlePayment($toReceive, $transactionId, 'receive');
+                $this->handlePayment($toReceive, $transactionId, 'receive', $masterAgents);
             }
 
         }else {
@@ -160,15 +160,16 @@ class TransactionService extends BaseService
     /**
      * @throws Throwable
      */
-    private function handlePayment(array $payments, int $transactionId, string $method):void
+    private function handlePayment(array $payments, int $transactionId, string $method, array $masterAgents):void
     {
         foreach ($payments as $item) {
+            $masterAgentId = $this->getMasterAgentId($masterAgents, $item['master_agent_id']);
             $paymentItem = [
                 'method' => $item['payment_method'],
                 'channel' => $item['channel'],
                 'send_currency_id' => $this->getCurrencyId($item['currency']),
                 'amount' => $item['amount'],
-                'master_agent_id' => intval($item['master_agent_id']),
+                'master_agent_id' => $masterAgentId,
             ];
 
             if ($method==='send') {
@@ -190,25 +191,30 @@ class TransactionService extends BaseService
     /**
      * @throws Throwable
      */
-    private function handleToReceive(array $toReceive, int $transactionId, string $method):void
+    public function getMasterAgentId(array $masterAgents, int $masterAgentSheetId):int
     {
-        foreach ($toReceive as $item) {
-            $toReceiveItem = [
-                'method' => $item[5],
-                'channel' => $item[6],
-                'currency_id' => $this->getCurrencyId($item[3]),
-                'master_agent_id' => intval($item[9]),
-                'amount' => $item[4],
-            ];
+        foreach ($masterAgents as $masterAgent) {
+            if($masterAgent['master_agent_id'] === $masterAgentSheetId) {
 
-            $res = $this->request(
-                "/api/v1/transactions/$transactionId/payments/receive",
-                'post',
-                $toReceiveItem
-            );
-            if(isset($res['errors'])) {
-                throw new Exception(json_encode($res));
+                $params = [
+                    'name' => $masterAgent['name'],
+                ];
+                $res = $this->request(
+                    "/api/v1/ma",
+                    'get',
+                    $params
+                );
+                if(isset($res['errors'])) {
+                    throw new Exception(json_encode($res['errors']));
+                }
+
+                foreach ($res['data'] as $datum) {
+                    if($datum['name'] === $masterAgent['name']) {
+                        return $datum['id'];
+                    }
+                }
             }
         }
+        return 0;
     }
 }

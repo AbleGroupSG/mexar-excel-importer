@@ -47,7 +47,12 @@ class ProcessCommand extends Command
             'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray(), $entitiesInfo->toArray()]],
             'Platforms'           => ['processPlatforms', [$platforms->toArray()]],
             'Accounts'            => ['processAccounts', [$accounts->toArray()]],
-            'Transactions Info'   => ['processTransactions', [$transactionsInfo->toArray(), $payments->toArray(), $entitiesInfo->toArray()]],
+            'Transactions Info'   => ['processTransactions', [
+                $transactionsInfo->toArray(),
+                $payments->toArray(),
+                $entitiesInfo->toArray(),
+                $masterAgent->toArray()
+            ]],
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);
@@ -201,7 +206,7 @@ class ProcessCommand extends Command
         $this->output->newLine();
     }
 
-    public function processTransactions(array $transactionsInfo, array $payments, array $entitiesInfo): void
+    public function processTransactions(array $transactionsInfo, array $payments, array $entitiesInfo, array $masterAgents): void
     {
         $service = new TransactionService();
         $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
@@ -222,7 +227,7 @@ class ProcessCommand extends Command
                     logger()->error('Entity not found for transaction', $transaction);
                     continue;
                 }
-                $res = $service->createTransaction($transaction, $entityId, $payments);
+                $res = $service->createTransaction($transaction, $entityId, $payments, $masterAgents);
 
                 if(Cache::get('completeTransaction', false)) {
                     if(!isset($res['transaction']['id'])) {
