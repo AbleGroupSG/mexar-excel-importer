@@ -243,7 +243,7 @@ class ProcessCommand extends Command
             $progressBar->advance();
         }
         $progressBar->finish();
-        $this->output->newLine();
+        $this->output->newLine();        
     }
 
     public function processBank(array $banks): void

@@ -112,6 +112,11 @@ class BaseService
     }
 
     /**
+     * Find entity ID from the API
+     * 
+     * @param int|null $entityId the entityId from the wroksheet
+     * @param array $entitiesInfo the parsed entities sheet
+     * 
      * @throws Throwable
      */
     public function getEntityIdFromEntitiesSheet(int|null $entityId, array $entitiesInfo): int

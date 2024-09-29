@@ -25,7 +25,7 @@ class TransactionService extends BaseService
         }
 
         $data = [
-            'destination_country_id' => $this->getDepartmentId(), // TODO: change to
+            'destination_country_id' => $this->getDepartmentId(), // TODO: change to SG_COUNTRY_ID
             'department_id' => $this->getDepartmentId(),
             'entity_id' => $entityId,
             'kyc_screen' => 0,
@@ -52,14 +52,18 @@ class TransactionService extends BaseService
         ];
 
         $transaction = $this->request('/api/v1/remittance/create', 'post', $data);
+        logger()->debug('create transaction response:', [
+            'response'  =>  json_encode($transaction)
+        ]);
+
         if(isset($transaction['transaction']['id'])){
             $transactionId = $transaction['transaction']['id'];
             if($toSend) {
-                $this->handlePayment($toSend, $transactionId, 'send', $masterAgents);
+                $this->handlePayment($toSend, $transactionId, 'send');
             }
 
             if($toReceive) {
-                $this->handlePayment($toReceive, $transactionId, 'receive', $masterAgents);
+                $this->handlePayment($toReceive, $transactionId, 'receive');
             }
 
         }else {
@@ -76,6 +80,10 @@ class TransactionService extends BaseService
     public function completeTransaction(int $transactionId): void
     {
         $res = $this->request("/api/v1/transactions/$transactionId/actions/complete", 'post');
+        logger()->debug('complete transaction response:', [
+            'transaction_id'    =>  $transactionId,
+            'response'  =>  json_encode($res)
+        ]);
         if (isset($res['errors'])) {
             throw new \Exception(json_encode($res['errors']));
         }
@@ -163,25 +171,32 @@ class TransactionService extends BaseService
     private function handlePayment(array $payments, int $transactionId, string $method, array $masterAgents):void
     {
         foreach ($payments as $item) {
+            $currencyId = $this->getCurrencyId($item['currency']);
             $masterAgentId = $this->getMasterAgentId($masterAgents, $item['master_agent_id']);
             $paymentItem = [
                 'method' => $item['payment_method'],
                 'channel' => $item['channel'],
-                'send_currency_id' => $this->getCurrencyId($item['currency']),
                 'amount' => $item['amount'],
                 'master_agent_id' => $masterAgentId,
             ];
 
             if ($method==='send') {
+                $paymentItem['send_currency_id'] = $currencyId;
                 if($paymentItem['channel'] === 'debt') {
                     $paymentItem['cost_rate'] = $item['cost_rate'];
                 }
+            }else{
+                $paymentItem['currency_id'] = $currencyId;
             }
              $res = $this->request(
                 "/api/v1/transactions/$transactionId/payments/$method",
                 'post',
                  $paymentItem
             );
+
+            logger()->debug('send payment response:', [
+                'response'  =>  json_encode($res)
+            ]);
             if(isset($res['errors'])) {
                 throw new Exception(json_encode($res));
             }
