@@ -59,11 +59,11 @@ class TransactionService extends BaseService
         if(isset($transaction['transaction']['id'])){
             $transactionId = $transaction['transaction']['id'];
             if($toSend) {
-                $this->handlePayment($toSend, $transactionId, 'send');
+                $this->handlePayment($toSend, $transactionId, 'send', $masterAgents);
             }
 
             if($toReceive) {
-                $this->handlePayment($toReceive, $transactionId, 'receive');
+                $this->handlePayment($toReceive, $transactionId, 'receive', $masterAgents);
             }
 
         }else {
@@ -219,12 +219,12 @@ class TransactionService extends BaseService
                     'get',
                     $params
                 );
-                if(isset($res['errors'])) {
+                if (isset($res['errors'])) {
                     throw new Exception(json_encode($res['errors']));
                 }
 
                 foreach ($res['data'] as $datum) {
-                    if($datum['name'] === $masterAgent['name']) {
+                    if ($datum['name'] === $masterAgent['name']) {
                         return $datum['id'];
                     }
                 }
