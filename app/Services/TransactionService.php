@@ -52,7 +52,7 @@ class TransactionService extends BaseService
         ];
 
         $transaction = $this->request('/api/v1/remittance/create', 'post', $data);
-        logger()->debug('create transaction response:', [            
+        logger()->debug('create transaction response:', [
             'response'  =>  json_encode($transaction)
         ]);
 
@@ -80,13 +80,13 @@ class TransactionService extends BaseService
     public function completeTransaction(int $transactionId): void
     {
         // $res = $this->request("/api/v1/transactioins/$transactionId/payments", 'get');
-        // logger()->debug('transaction payments response:', [            
+        // logger()->debug('transaction payments response:', [
         //     'response'  =>  json_encode($res)
         // ]);
 
         $res = $this->request("/api/v1/transactions/$transactionId/actions/complete", 'post');
         logger()->debug('complete transaction response:', [
-            'transaction_id'    =>  $transactionId,            
+            'transaction_id'    =>  $transactionId,
             'response'  =>  json_encode($res)
         ]);
         if (isset($res['errors'])) {
@@ -176,18 +176,21 @@ class TransactionService extends BaseService
     private function handlePayment(array $payments, int $transactionId, string $method):void
     {
         foreach ($payments as $item) {
+            $currencyId = $this->getCurrencyId($item['currency']);
             $paymentItem = [
                 'method' => $item['payment_method'],
                 'channel' => $item['channel'],
-                'send_currency_id' => $this->getCurrencyId($item['currency']),
                 'amount' => $item['amount'],
                 'master_agent_id' => intval($item['master_agent_id']),
             ];
 
             if ($method==='send') {
+                $paymentItem['send_currency_id'] = $currencyId;
                 if($paymentItem['channel'] === 'debt') {
                     $paymentItem['cost_rate'] = $item['cost_rate'];
                 }
+            }else{
+                $paymentItem['currency_id'] = $currencyId;
             }
              $res = $this->request(
                 "/api/v1/transactions/$transactionId/payments/$method",
@@ -195,7 +198,7 @@ class TransactionService extends BaseService
                  $paymentItem
             );
 
-            logger()->debug('send payment response:', [                
+            logger()->debug('send payment response:', [
                 'response'  =>  json_encode($res)
             ]);
             if(isset($res['errors'])) {
