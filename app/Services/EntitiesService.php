@@ -45,7 +45,7 @@ class EntitiesService extends BaseService
      */
     private function getEntitiesList(string $q): array
     {
-        $res = $this->request('/api/v1/crm/entities', 'get', ['q' => $q]);
+        $res = $this->request('/api/v1/crm/entities', 'get', ['q' => $q, 'department_id' => $this->getDepartmentId()]);
         return $res['data'];
     }
 
@@ -59,12 +59,14 @@ class EntitiesService extends BaseService
         $entityType = $data['entity_type'];
         if($entityType === 'individual') {
             $payload = [
+                'department_id' => $this->getDepartmentId(),
                 'entity_type' => 'individual',
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
             ];
         }else {
             $payload = [
+                'department_id' => $this->getDepartmentId(),
                 'entity_type' => 'corporate',
                 'name' => $data['name'],
             ];
