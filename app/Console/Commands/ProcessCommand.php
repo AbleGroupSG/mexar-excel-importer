@@ -6,6 +6,7 @@ use App\Imports\ExcelImport;
 use App\Services\AccountService;
 use App\Services\BankService;
 use App\Services\CurrencyService;
+use App\Services\DepartmentService;
 use App\Services\EntitiesService;
 use App\Services\MasterAgentService;
 use App\Services\PlatformService;
@@ -25,6 +26,7 @@ class ProcessCommand extends Command
         Cache::forget('token');
         $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
+        $this->info('Loading...');
 
         $this->selectDepartmentID();
         $this->completeTransactionOption();
@@ -61,13 +63,23 @@ class ProcessCommand extends Command
 
     private function  selectDepartmentID(): void
     {
-        $departments = config('mexar.departments');
+        // $departments = config('mexar.departments');
         $menuBuilder = (new CliMenuBuilder)
             ->setTitle('Select department ID:');
 
-        foreach ($departments as $departmentId) {
-            $menuBuilder->addRadioItem('Department '. $departmentId, function(CliMenu $menu) use ($departmentId) {
+        $service = new DepartmentService();
+
+        $departments = $service->getDepartments();
+        if(empty($departments) || !isset($departments['data'])) {
+            $this->error('No departments found');
+            return;
+        }
+        
+        foreach ($departments['data'] as $department) {
+            $departmentId = $department['id'];
+            $menuBuilder->addRadioItem('Department '. $departmentId . $department['name'], function(CliMenu $menu) use ($departmentId) {
                 Cache::put('departmentId', (int) $departmentId, now()->addDay());
+                $this->info('Department ID selected: ' . $departmentId);
                 $menu->close();
             });
         }
