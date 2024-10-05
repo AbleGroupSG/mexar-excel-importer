@@ -49,15 +49,15 @@ class MasterAgentService extends BaseService
             if (!empty($row['debit_currency'])) {
                 $currentEntity['debit'][] = [
                     'currency_id' => $service->getCurrencyId($row['debit_currency']),
-                    'balance' => $this->handleCellFormat($row['debit_balance']),
-                    'average_cost' => $this->handleCellFormat($row['debit_average_cost']),
+                    'balance' => abs($this->handleCellFormat($row['debit_balance'])),
+                    'average_cost' => abs($this->handleCellFormat($row['debit_average_cost'])),
                 ];
             }
             if (!empty($row['credit_currency'])) {
                 $currentEntity['credit'][] = [
                     'currency_id' => $service->getCurrencyId($row['credit_currency']),
-                    'balance' => $this->handleCellFormat($row['credit_balance']),
-                    'average_cost' => $this->handleCellFormat($row['credit_average_cost']),
+                    'balance' => abs($this->handleCellFormat($row['credit_balance'])),
+                    'average_cost' => abs($this->handleCellFormat($row['credit_average_cost'])),
                 ];
             }
         }
