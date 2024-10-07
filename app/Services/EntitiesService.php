@@ -61,7 +61,7 @@ class EntitiesService extends BaseService
             $payload = [
                 'department_id' => $this->getDepartmentId(),
                 'entity_type' => 'individual',
-                'first_name' => $data['first_name'],
+                'first_name' => str($data['first_name']) ?? '',
                 'last_name' => $data['last_name'],
             ];
         }else {
@@ -78,11 +78,11 @@ class EntitiesService extends BaseService
             foreach ($errors as $error) {
                 logger()->error(
                     'Error creating entity',
-                    ['message' => $error['message'], 'payload' => $payload],
+                    ['message' => $error['message'] ?? null, 'payload' => $payload],
                 );
             }
         }
-
+        
         return $response['data'];
     }
 }

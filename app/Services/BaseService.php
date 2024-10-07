@@ -121,7 +121,8 @@ class BaseService
      */
     public function getEntityIdFromEntitiesSheet(int|null $entityId, array $entitiesInfo): int
     {
-        if ($entityId === null) {
+        if ($entityId === null) {            
+            logger()->debug('Entity ID for master agent is empty');
             throw new Exception('Entity ID for master agent is empty');
         }
         $service = new EntitiesService();
@@ -133,6 +134,7 @@ class BaseService
             }
         }
         if(empty($row)) {
+            logger()->debug('Entity ID for master agent is not found in entities sheet');
             throw new Exception('Entity ID for master agent is not found in entities sheet');
         }
         $entity = $service->findOrCreateEntity($row);
