@@ -7,7 +7,7 @@ class UserService extends BaseService
     /**
      * @throws \Exception
      */
-    public function createUser(array $userInfo): void
+    public function createUser(array $userInfo): ?int
     {
         $payload = [
             'username' => $userInfo['username'],
@@ -33,6 +33,35 @@ class UserService extends BaseService
         }
 
         if(isset($res['meta']) && $res['meta']['code'] !== 400) {
+            logger()->info('Unexpected response', ['response' => $res]);
+        }
+
+        return $res['data']['id'] ?? null;
+    }
+
+    public function addUser2Department(int $userId, int $departmentId): void
+    {
+        $payload = [
+            'user_id' => $userId,
+            'department_id' => $departmentId,
+            'role'  =>  'employee',
+        ];
+
+        $res = $this->request('/api/v1/departments/' . $departmentId . '/members', 'post', $payload);
+
+        if(isset($res['meta']) && $res['meta']['code'] == 400) {
+            $errors = $res['errors'];
+            foreach ($errors as $error) {
+                foreach ($error as $message) {
+                    logger()->error(
+                        'Error adding user to department',
+                        ['message' => $message, 'user_id' => $userId, 'department_id' => $departmentId],
+                    );
+                }
+            }
+        }
+
+        if(isset($res['meta']) && $res['meta']['code'] !== 200) {
             logger()->info('Unexpected response', ['response' => $res]);
         }
     }

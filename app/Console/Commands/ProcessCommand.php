@@ -207,7 +207,11 @@ class ProcessCommand extends Command
 
         foreach ($usersInfo as $userInfo) {
             try {
-                $service->createUser($userInfo);
+                $userId = $service->createUser($userInfo);
+                if($userId) {
+                    $departmentId = Cache::get('departmentId', 1);
+                    $service->addUser2Department($userId, $departmentId);
+                }
             }catch (\Throwable $e) {
                 logger()->error('Error processing user: ' . $e->getMessage(), $userInfo);
                 continue;
