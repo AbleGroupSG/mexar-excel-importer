@@ -6,13 +6,13 @@ class EntitiesService extends BaseService
 {
     /**
      * find the entity from the the API response
-     * 
+     *
      * This function will match the following fields:
      * - entity_type
      * - first_name if entity_type is individual
      * - last_name if entity_type is individual
      * - name if entity_type is corporate
-     * 
+     *
      * @throws \Exception
      * @throws \Throwable
      */
@@ -51,7 +51,7 @@ class EntitiesService extends BaseService
 
     /**
      * API wrapper for create entity via API call
-     * 
+     *
      * @throws \Exception|\Throwable
      */
     private function createEntity(array $data):array
@@ -82,7 +82,58 @@ class EntitiesService extends BaseService
                 );
             }
         }
-        
+
         return $response['data'];
+    }
+
+    /**
+     * @throws \Throwable
+     */
+    public function attachReferEntity(array $entityInfo, array $entitiesInfo): void
+    {
+        if(!isset($entityInfo['referrer'])) {
+            return;
+        }
+        $referrer = null;
+        foreach ($entitiesInfo as $entity){
+            if($entity['id'] === $entityInfo['referrer']){
+                $referrer = $entity;
+                break;
+            }
+        }
+
+        if(!$referrer) {
+            logger()->error(
+                'Referrer not found',
+                ['entity_id' => $entityInfo['id'], 'referrer_id' => $entityInfo['referrer']]
+            );
+        }
+
+        if($referrer['entity_type'] !== 'individual') {
+            logger()->error(
+                'Referrer is not an individual',
+                ['entity_id' => $entityInfo['id'], 'referrer_id' => $entityInfo['referrer']]
+            );
+        }
+
+        $referrer = $this->findOrCreateEntity($referrer);
+
+        $payload = [
+            'related_entity_id' => $referrer['id'],
+            'relation_type' => 'referrer',
+        ];
+
+        $res = $this->request(
+            '/api/v1/crm/entities/'.$entityInfo['id'].'/relations',
+            'post',
+            $payload
+        );
+
+        if(isset($res['errors'])) {
+            logger()->error(
+                'Error creating relation',
+                ['entity_id' => $entityInfo['id'], 'referrer_id' => $entityInfo['referrer']]
+            );
+        }
     }
 }

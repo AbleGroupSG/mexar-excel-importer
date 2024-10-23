@@ -24,7 +24,7 @@ class ProcessCommand extends Command
     public function handle(): void
     {
         Cache::forget('token');
-        $path = 'excel1.xlsx';
+        $path = 'excel3.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
         $this->info('Loading...');
 
@@ -74,7 +74,7 @@ class ProcessCommand extends Command
             $this->error('No departments found');
             return;
         }
-        
+
         foreach ($departments['data'] as $department) {
             $departmentId = $department['id'];
             $menuBuilder->addRadioItem('Department '. $departmentId . $department['name'], function(CliMenu $menu) use ($departmentId) {
@@ -193,6 +193,21 @@ class ProcessCommand extends Command
         }
         $progressBar->finish();
         $this->output->newLine();
+
+        $this->info("Processing entity's referrer");
+        $progressBar = $this->output->createProgressBar(sizeof($entitiesInfo));
+        $progressBar->start();
+        foreach ($entitiesInfo as $entityInfo) {
+            try {
+                $service->attachReferEntity($entityInfo, $entitiesInfo);
+            }catch (\Throwable $e) {
+                logger()->error('Error processing entity: ' . $e->getMessage(), $entityInfo);
+                continue;
+            }
+            $progressBar->advance();
+        }
+        $progressBar->finish();
+        $this->output->newLine();
     }
 
 
@@ -259,7 +274,7 @@ class ProcessCommand extends Command
             $progressBar->advance();
         }
         $progressBar->finish();
-        $this->output->newLine();        
+        $this->output->newLine();
     }
 
     public function processBank(array $banks): void
