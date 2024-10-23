@@ -8,6 +8,7 @@ use App\Services\BankService;
 use App\Services\CurrencyService;
 use App\Services\DepartmentService;
 use App\Services\EntitiesService;
+use App\Services\EntityCurrencyCommissionService;
 use App\Services\MasterAgentService;
 use App\Services\PlatformService;
 use App\Services\TransactionService;
@@ -40,20 +41,26 @@ class ProcessCommand extends Command
         $platforms = $data[6];
         $payments = $data[7];
         $masterAgent = $data[8];
+        $entityCurrencyCommissionInfo = $data[9];
+        $this->processEntityCurrencyCommission($entityCurrencyCommissionInfo->toArray(), $entitiesInfo->toArray());
 
         $dataSources = [
-            'Users Info'          => ['processUsers', [$usersInfo->toArray()]],
-            'Entities Info'       => ['processEntities', [$entitiesInfo->toArray()]],
-            'Banks'               => ['processBank', [$banks->toArray()]],
-            'Department Currency' => ['processCurrencies', [$currencyInfo->toArray()]],
-            'Master Agent'        => ['processMasterAgent', [$masterAgent->toArray(), $entitiesInfo->toArray()]],
-            'Platforms'           => ['processPlatforms', [$platforms->toArray()]],
-            'Accounts'            => ['processAccounts', [$accounts->toArray()]],
-            'Transactions Info'   => ['processTransactions', [
+            'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
+            'Entities Info'              => ['processEntities', [$entitiesInfo->toArray()]],
+            'Banks'                      => ['processBank', [$banks->toArray()]],
+            'Department Currency'        => ['processCurrencies', [$currencyInfo->toArray()]],
+            'Master Agent'               => ['processMasterAgent', [$masterAgent->toArray(), $entitiesInfo->toArray()]],
+            'Platforms'                  => ['processPlatforms', [$platforms->toArray()]],
+            'Accounts'                   => ['processAccounts', [$accounts->toArray()]],
+            'Transactions Info'          => ['processTransactions', [
                 $transactionsInfo->toArray(),
                 $payments->toArray(),
                 $entitiesInfo->toArray(),
                 $masterAgent->toArray()
+            ]],
+            'Entity Currency Commission' => ['processEntityCurrencyCommission', [
+                $entityCurrencyCommissionInfo->toArray(),
+                $entitiesInfo->toArray()
             ]],
         ];
 
@@ -376,5 +383,37 @@ class ProcessCommand extends Command
         }
         $progressBar->finish();
         $this->output->newLine();
+    }
+
+    public function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo, array $entitiesInfo): void
+    {
+        $service = new EntityCurrencyCommissionService();
+        $entityService = new EntitiesService();
+        $entityCurrencyCommissionInfo = $service->removeEmptyRows($entityCurrencyCommissionInfo);
+        $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
+        foreach ($entityCurrencyCommissionInfo as $commission) {
+            $entityInfo = array_filter($entitiesInfo, function($entity) use ($commission) {
+                return $entity['id'] === $commission['entity_id'];
+            })[0] ?? null;
+
+            if (!$entityInfo) {
+                logger()->error('Entity not found for commission', $commission);
+                continue;
+            }
+
+            try {
+                $entity = $entityService->findOrCreateEntity($entityInfo);
+                if (!$entity) {
+                    logger()->error('Error processing entity for commission', $entityInfo);
+                    continue;
+                }
+                $service->createOrUpdateCommission($commission, $entity);
+
+            }catch (\Throwable $e) {
+                logger()->error('Error processing entity: ' . $e->getMessage(), $entityInfo);
+                continue;
+            }
+        }
+
     }
 }

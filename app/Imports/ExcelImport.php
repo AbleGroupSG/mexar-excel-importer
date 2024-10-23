@@ -30,6 +30,7 @@ class ExcelImport implements WithMultipleSheets
             6 => new PlatformsImport(),
             7 => new PaymentsImport(),
             8 => new MasterAgentImport(),
+            9 => new EntityCurrencyCommissionImport(),
         ];
     }
 }
