@@ -42,7 +42,7 @@ class ProcessCommand extends Command
         $payments = $data[7];
         $masterAgent = $data[8];
         $entityCurrencyCommissionInfo = $data[9];
-        $this->processEntityCurrencyCommission($entityCurrencyCommissionInfo->toArray(), $entitiesInfo->toArray());
+
 
         $dataSources = [
             'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
