@@ -32,19 +32,4 @@ class BankService extends BaseService
             }
         }
     }
-
-    /**
-     * @throws \Exception
-     */
-    private function getCountryId(string $name): int
-    {
-        $list = $this->request('/api/v1/data/countries');
-
-        foreach ($list['data'] as $country) {
-            if($country['common_name'] === $name || $country['official_name'] === $name) {
-                return $country['id'];
-            }
-        }
-        return throw new \Exception('Country not found');
-    }
 }

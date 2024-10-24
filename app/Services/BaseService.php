@@ -54,6 +54,7 @@ class BaseService
     {
         return Cache::rememberForever('token', function () {
             try {
+
                 $response = Http::post(config('mexar.url') . '/api/v1/oauth/token/grant', [
                     'email' => config('mexar.email'),
                     'password' => config('mexar.password'),
@@ -113,15 +114,15 @@ class BaseService
 
     /**
      * Find entity ID from the API
-     * 
+     *
      * @param int|null $entityId the entityId from the wroksheet
      * @param array $entitiesInfo the parsed entities sheet
-     * 
+     *
      * @throws Throwable
      */
     public function getEntityIdFromEntitiesSheet(int|null $entityId, array $entitiesInfo): int
     {
-        if ($entityId === null) {            
+        if ($entityId === null) {
             logger()->debug('Entity ID for master agent is empty');
             throw new Exception('Entity ID for master agent is empty');
         }
@@ -139,5 +140,45 @@ class BaseService
         }
         $entity = $service->findOrCreateEntity($row);
         return $entity['id'];
+    }
+
+
+    public function getCountryId(string|null $name): int|null
+    {
+        if($name === null) return null;
+        $name = trim($name);
+
+        $list = Cache::rememberForever('countriesList', function () {
+            return $this->request('/api/v1/data/countries')['data'];
+        });
+
+        foreach ($list as $country) {
+            if(
+                $country['common_name'] === $name ||
+                $country['official_name'] === $name ||
+                $country['cca2'] === $name
+            ) {
+                return $country['id'];
+            }
+        }
+
+        logger()->error('Country not found', ['name' => $name]);
+        return null;
+    }
+
+
+
+    public function handleResponse(array $response, array $payload, string $errorMessage):array
+    {
+        if(isset($response['errors'])) {
+            $errors = $response['errors'];
+            foreach ($errors as $error) {
+                logger()->error(
+                    $errorMessage,
+                    ['message' => $error['message'] ?? null, 'payload' => $payload],
+                );
+            }
+        }
+        return $response['data'];
     }
 }

@@ -61,29 +61,50 @@ class EntitiesService extends BaseService
             $payload = [
                 'department_id' => $this->getDepartmentId(),
                 'entity_type' => 'individual',
+                'nationality_country_id'  => $data['country_id'] ?? null,
                 'first_name' => str($data['first_name']) ?? '',
                 'last_name' => $data['last_name'],
+                'gender' => $data['gender'],
             ];
+            $response = $this->request('/api/v1/crm/entities', 'post', $payload);
+            $responseData = $this->handleResponse($response, $payload, 'Error creating entity');
+            $entityId = $responseData['id'];
+
+                //TODO files required
+//            if(isset($data['identity_type'])) {
+//                $entityIdentityPayload = [
+//                    'entity_id' => $responseData['id'],
+//                    'country_id' => $data['country_id'],
+//                    'identity_type' => $data['identity_type'],
+//                    'identity_number' => $data['identity_number'],
+//                    'identity_expires_at' => $data['identity_expires_at'],
+//                ];
+//                $response = $this->request("/api/v1/crm/entities/$entityId/identities", 'post', $entityIdentityPayload);
+//                $this->handleResponse($response, $entityIdentityPayload, "Error creating entity's identity");
+//            }
+
+
         }else {
             $payload = [
                 'department_id' => $this->getDepartmentId(),
                 'entity_type' => 'corporate',
                 'name' => $data['name'],
             ];
-        }
-        $response = $this->request('/api/v1/crm/entities', 'post', $payload);
 
-        if(isset($response['errors'])) {
-            $errors = $response['errors'];
-            foreach ($errors as $error) {
-                logger()->error(
-                    'Error creating entity',
-                    ['message' => $error['message'] ?? null, 'payload' => $payload],
-                );
+            $response = $this->request('/api/v1/crm/entities', 'post', $payload);
+            $responseData = $this->handleResponse($response, $payload, 'Error creating entity');
+            $entityId = $responseData['id'];
+        }
+
+        if(!$this->isContactEmpty($data['contact_info'])) {
+            $entityContactArray = $data['contact_info'];
+            foreach ($entityContactArray as $contact){
+                $response = $this->request("/api/v1/crm/entities/$entityId/contacts", 'post', $contact);
+                $this->handleResponse($response, $contact, "Error creating entity's contact");
+                dump($response);
             }
         }
-
-        return $response['data'];
+        return $responseData;
     }
 
     /**
@@ -136,4 +157,66 @@ class EntitiesService extends BaseService
             );
         }
     }
+
+    public function mappedEntities(array $entitiesInfo):array
+    {
+        $processedEntities = [];
+        $currentEntity = null;
+
+        foreach ($entitiesInfo as $entityInfo) {
+            if (!isset($entityInfo['id'])) {
+                if ($currentEntity) {
+                    $currentEntity['contact_info'][] = [
+                        'contact_type' => $entityInfo['contact_type'],
+                        'field1' => $entityInfo['field_1'],
+                        'field2' => $entityInfo['field_2'],
+                    ];
+                }
+                continue;
+            }
+
+            if ($currentEntity) {
+                $processedEntities[] = $currentEntity;
+            }
+
+            $currentEntity = [
+                'id' => $entityInfo['id'],
+                'entity_type' => $entityInfo['entity_type'],
+                'name' => $entityInfo['name'] ?? null,
+                'first_name' => $entityInfo['first_name'] ?? null,
+                'last_name' => $entityInfo['last_name'] ?? null,
+                'gender' => $entityInfo['gender'] ?? null,
+                'country_id' => $this->getCountryId($entityInfo['country']) ?? null,
+                'identity_type' => $entityInfo['identity_type'] ?? null,
+                'identity_number' => $entityInfo['identity_number'] ?? null,
+                'identity_expires_at' => $entityInfo['identity_expires_at'] ?? null,
+                'contact_info' => [
+                    [
+                        'contact_type' => $entityInfo['contact_type'] ?? null,
+                        'field1' => $entityInfo['field_1'] ?? null,
+                        'field2' => $entityInfo['field_2'] ?? null,
+                    ],
+                ],
+            ];
+        }
+        if ($currentEntity) {
+            $processedEntities[] = $currentEntity;
+        }
+        return $processedEntities;
+    }
+
+    private function isContactEmpty(array $contactInfo): bool
+    {
+        if(count($contactInfo) > 1) {
+            return false;
+        }
+        foreach ($contactInfo[0] as $key => $value) {
+            if($value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
 }

@@ -189,7 +189,8 @@ class ProcessCommand extends Command
         $progressBar = $this->output->createProgressBar(sizeof($entitiesInfo));
         $progressBar->start();
 
-        foreach ($entitiesInfo as $entityInfo) {
+        $mappedEntities = $service->mappedEntities($entitiesInfo);
+        foreach ($mappedEntities as $entityInfo) {
             try {
                 $service->findOrCreateEntity($entityInfo);
             }catch (\Throwable $e) {
