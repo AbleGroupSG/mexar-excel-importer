@@ -220,6 +220,37 @@ class EntitiesService extends BaseService
         return true;
     }
 
+    /**
+     * @throws \Throwable
+     */
+    public function entityExists(array $entityInfo):bool
+    {
+        $payload = [
+            'q' => $entityInfo['entity_type'] === 'individual' ? $entityInfo['first_name'] : $entityInfo['name'],
+            'department_id' => $this->getDepartmentId(),
+        ];
+        $res = $this->request('/api/v1/crm/entities', 'get', $payload);
+        if(empty($res['data'])) {
+            return false;
+        }
+        foreach ($res['data'] as $entity) {
+            if(
+                $entity['entity_type'] === 'individual' &&
+                $entity['first_name'] === $entityInfo['first_name'] &&
+                $entity['last_name'] === $entityInfo['last_name']
+            ) {
+                return true;
+            }
+            if(
+                $entity['entity_type'] === 'corporate' &&
+                $entity['name'] === $entityInfo['name']
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function fetchAllEntities(): array
     {
         $res = $this->request('/api/v1/crm/entities');

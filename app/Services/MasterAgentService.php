@@ -69,6 +69,26 @@ class MasterAgentService extends BaseService
        return $groupedEntities;
     }
 
+    /**
+     * @throws Throwable
+     */
+    public function masterAgentExists(array $masterAgentInfo): bool
+    {
+        $res = $this->request('/api/v1/ma', 'get', [
+            'department_id' => $this->getDepartmentId(),
+            'name' => $masterAgentInfo['name'],
+        ]);
+        if (empty($res['data'])) {
+            return false;
+        }
+        foreach ($res['data'] as $masterAgent) {
+            if ($masterAgent['name'] === $masterAgentInfo['name']) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function fetchAllMasterAgents(): array
     {
         $res = $this->request('/api/v1/ma');

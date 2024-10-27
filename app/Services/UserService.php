@@ -71,4 +71,27 @@ class UserService extends BaseService
         $res = $this->request('/api/v1/users');
         return $res['data'] ?? [];
     }
+
+    /**
+     * @throws \Throwable
+     */
+    public function userExists(array $userInfo): bool
+    {
+        $res = $this->request('/api/v1/users', 'get', [
+            'q' => $userInfo['username'],
+            'department_id' => $this->getDepartmentId(),
+        ]);
+        if(empty($res['data'])) {
+            return false;
+        }
+        foreach ($res['data'] as $user) {
+            if(
+                $user['username'] === $userInfo['username'] &&
+                $user['email'] === $userInfo['email']
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

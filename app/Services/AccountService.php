@@ -84,6 +84,8 @@ class AccountService extends BaseService
             ],
             'payable', 'cash' => [
                 'account_name' => $row['account_name'],
+                'account_number' => $row['account_number'],
+                'bank_id' => $this->getBankId($row['bank_name']),
                 'department_id' => $this->getDepartmentId(),
                 'calculation_method' => 'default',
                 'account_type' => $accountType,
@@ -204,6 +206,49 @@ class AccountService extends BaseService
             }
         }
         throw new \Exception('Operator not found', 404);
+    }
+
+    /**
+     * @throws \Throwable
+     */
+    public function accountExists(array $accountInfo): bool
+    {
+        $res = $this->request('/api/v1/stock/accounts', 'get', [
+            'department_id' => $this->getDepartmentId(),
+            'account_type' => Str::lower($accountInfo['account_type']),
+        ]);
+        if (empty($res['data'])) {
+            return false;
+        }
+        foreach ($res['data'] as $account) {
+            if (
+                Str::lower($accountInfo['account_type']) === 'bank' &&
+                $account['account_number'] === $accountInfo['account_number']
+            ) {
+                return true;
+            }
+            if (
+                Str::lower($accountInfo['account_type']) === 'crypto' &&
+                $account['crypto_wallet_address'] === $accountInfo['wallet_address']
+            ) {
+                return true;
+            }
+            if(
+                Str::lower($accountInfo['account_type']) === 'payable' &&
+                $account['account_number'] === $accountInfo['account_number']
+            ) {
+                return true;
+            }
+
+            //TODO how to check app accounts
+            if (
+                Str::lower($accountInfo['account_type']) === 'app'
+            ) {
+                return true;
+            }
+
+        }
+        return false;
     }
 
     public function fetchAllAccounts(): array

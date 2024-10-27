@@ -21,7 +21,7 @@ use PhpSchool\CliMenu\CliMenu;
 
 class ProcessCommand extends Command
 {
-    protected $signature = 'process.excel {--test=}';
+    protected $signature = 'process.excel';
     public function handle(): void
     {
         $path = 'excel3.xlsx';
@@ -30,18 +30,6 @@ class ProcessCommand extends Command
 
         $this->selectDepartmentID();
         $this->completeTransactionOption();
-
-        if($this->option('test')) {
-            $this->fetchAllUsers();
-            $this->fetchEntities();
-            $this->fetchBanks();
-            $this->fetchCurrencies();
-            $this->fetchMasterAgents();
-            $this->fetchPlatforms();
-            $this->fetchAccounts();
-            $this->fetchTransactions();
-            $this->fetchEntityCurrencyCommission();
-        }
 
         $transactionsInfo = $data[0];
         $currencyInfo = $data[1];
@@ -80,7 +68,6 @@ class ProcessCommand extends Command
 
     private function  selectDepartmentID(): void
     {
-        // $departments = config('mexar.departments');
         $menuBuilder = (new CliMenuBuilder)
             ->setTitle('Select department ID:');
 

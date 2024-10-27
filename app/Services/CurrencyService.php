@@ -37,6 +37,26 @@ class CurrencyService extends BaseService
         }
     }
 
+    /**
+     * @throws \Throwable
+     */
+    public function currencyExists(array $currencyInfo): bool
+    {
+        $currencyId = $this->getCurrencyId($currencyInfo['currency']);
+        $res = $this->request('/api/v1/departments/' . $this->getDepartmentId() . '/currencies', 'get',[
+            'currency_id' => $currencyId,
+        ]);
+        if (empty($res['data'])) {
+            return false;
+        }
+        foreach ($res['data'] as $currency) {
+            if($currency['currency_id'] === $currencyId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function fetchAllCurrencies()
     {
         $departmentId = Cache::get('departmentId', 1);

@@ -33,6 +33,24 @@ class PlatformService extends BaseService
         }
     }
 
+    public function platformExists(array $platformInfo): bool
+    {
+        $res = $this->request('/api/v1/data/payments/platforms', 'get', [
+            'platform_name' => $platformInfo['platform_name'],
+        ]);
+        if (empty($res['data'])) {
+            return false;
+        }
+        foreach ($res['data'] as $platform) {
+            if (
+                $platform['platform_name'] === $platformInfo['platform_name']
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function fetchAllPlatforms(): array
     {
         $res = $this->request('/api/v1/data/payments/platforms');
