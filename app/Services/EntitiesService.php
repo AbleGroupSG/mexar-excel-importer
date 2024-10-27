@@ -70,18 +70,17 @@ class EntitiesService extends BaseService
             $responseData = $this->handleResponse($response, $payload, 'Error creating entity');
             $entityId = $responseData['id'];
 
-                //TODO files required
-//            if(isset($data['identity_type'])) {
-//                $entityIdentityPayload = [
-//                    'entity_id' => $responseData['id'],
-//                    'country_id' => $data['country_id'],
-//                    'identity_type' => $data['identity_type'],
-//                    'identity_number' => $data['identity_number'],
-//                    'identity_expires_at' => $data['identity_expires_at'],
-//                ];
-//                $response = $this->request("/api/v1/crm/entities/$entityId/identities", 'post', $entityIdentityPayload);
-//                $this->handleResponse($response, $entityIdentityPayload, "Error creating entity's identity");
-//            }
+            if(isset($data['identity_type'])) {
+                $entityIdentityPayload = [
+                    'entity_id' => $responseData['id'],
+                    'country_id' => $data['country_id'],
+                    'identity_type' => $data['identity_type'],
+                    'identity_number' => $data['identity_number'],
+                    'identity_expires_at' => $data['identity_expires_at'],
+                ];
+                $response = $this->request("/api/v1/crm/entities/$entityId/identities", 'post', $entityIdentityPayload);
+                $this->handleResponse($response, $entityIdentityPayload, "Error creating entity's identity");
+            }
 
 
         }else {
@@ -96,7 +95,7 @@ class EntitiesService extends BaseService
             $entityId = $responseData['id'];
         }
 
-        if(!$this->isContactEmpty($data['contact_info'])) {
+        if(!$this->isContactEmpty($data['contact_info'] ?? null)) {
             $entityContactArray = $data['contact_info'];
             foreach ($entityContactArray as $contact){
                 $response = $this->request("/api/v1/crm/entities/$entityId/contacts", 'post', $contact);
@@ -205,8 +204,11 @@ class EntitiesService extends BaseService
         return $processedEntities;
     }
 
-    private function isContactEmpty(array $contactInfo): bool
+    private function isContactEmpty(array|null $contactInfo): bool
     {
+        if ($contactInfo === null) {
+            return true;
+        }
         if(count($contactInfo) > 1) {
             return false;
         }
@@ -218,5 +220,9 @@ class EntitiesService extends BaseService
         return true;
     }
 
-
+    public function fetchAllEntities(): array
+    {
+        $res = $this->request('/api/v1/crm/entities');
+        return $res['data'] ?? [];
+    }
 }

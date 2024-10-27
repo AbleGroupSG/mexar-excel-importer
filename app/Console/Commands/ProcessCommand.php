@@ -21,16 +21,27 @@ use PhpSchool\CliMenu\CliMenu;
 
 class ProcessCommand extends Command
 {
-    protected $signature = 'process.excel';
+    protected $signature = 'process.excel {--test=}';
     public function handle(): void
     {
-        Cache::forget('token');
         $path = 'excel3.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
         $this->info('Loading...');
 
         $this->selectDepartmentID();
         $this->completeTransactionOption();
+
+        if($this->option('test')) {
+            $this->fetchAllUsers();
+            $this->fetchEntities();
+            $this->fetchBanks();
+            $this->fetchCurrencies();
+            $this->fetchMasterAgents();
+            $this->fetchPlatforms();
+            $this->fetchAccounts();
+            $this->fetchTransactions();
+            $this->fetchEntityCurrencyCommission();
+        }
 
         $transactionsInfo = $data[0];
         $currencyInfo = $data[1];
@@ -42,7 +53,6 @@ class ProcessCommand extends Command
         $payments = $data[7];
         $masterAgent = $data[8];
         $entityCurrencyCommissionInfo = $data[9];
-
 
         $dataSources = [
             'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
@@ -156,7 +166,7 @@ class ProcessCommand extends Command
         call_user_func_array([$this, $function], $parameters);
     }
 
-    public function processCurrencies(array $currenciesInfo): void
+    private function processCurrencies(array $currenciesInfo): void
     {
         $service = new CurrencyService();
         $currenciesInfo = $service->removeEmptyRows($currenciesInfo);
@@ -180,7 +190,7 @@ class ProcessCommand extends Command
     }
 
 
-    public function processEntities(array $entitiesInfo): void
+    private function processEntities(array $entitiesInfo): void
     {
         $service = new EntitiesService();
         $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
@@ -219,7 +229,7 @@ class ProcessCommand extends Command
     }
 
 
-    public function processUsers(array $usersInfo): void
+    private function processUsers(array $usersInfo): void
     {
         $service = new UserService();
         $usersInfo = $service->removeEmptyRows($usersInfo);
@@ -245,7 +255,7 @@ class ProcessCommand extends Command
         $this->output->newLine();
     }
 
-    public function processTransactions(array $transactionsInfo, array $payments, array $entitiesInfo, array $masterAgents): void
+    private function processTransactions(array $transactionsInfo, array $payments, array $entitiesInfo, array $masterAgents): void
     {
         $service = new TransactionService();
         $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
@@ -285,7 +295,7 @@ class ProcessCommand extends Command
         $this->output->newLine();
     }
 
-    public function processBank(array $banks): void
+    private function processBank(array $banks): void
     {
         $service = new BankService();
         $banks = $service->removeEmptyRows($banks);
@@ -307,7 +317,7 @@ class ProcessCommand extends Command
     }
 
 
-    public function processPlatforms(array $platformsInfo): void
+    private function processPlatforms(array $platformsInfo): void
     {
         $service = new PlatformService();
         $platformsInfo = $service->removeEmptyRows($platformsInfo);
@@ -328,7 +338,7 @@ class ProcessCommand extends Command
         $this->output->newLine();
     }
 
-    public function processAccounts(array $accountsInfo): void
+    private function processAccounts(array $accountsInfo): void
     {
         $service = new AccountService();
         $accountsInfo = $service->removeEmptyRows($accountsInfo);
@@ -358,7 +368,7 @@ class ProcessCommand extends Command
 
     }
 
-    public function processMasterAgent(array $masterAgentInfo, array $entitiesInfo): void
+    private function processMasterAgent(array $masterAgentInfo, array $entitiesInfo): void
     {
         $service = new MasterAgentService();
         $masterAgentInfo = $service->removeEmptyRows($masterAgentInfo);
@@ -386,7 +396,7 @@ class ProcessCommand extends Command
         $this->output->newLine();
     }
 
-    public function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo, array $entitiesInfo): void
+    private function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo, array $entitiesInfo): void
     {
         $service = new EntityCurrencyCommissionService();
         $entityService = new EntitiesService();
@@ -415,6 +425,96 @@ class ProcessCommand extends Command
                 continue;
             }
         }
+    }
 
+
+    private function fetchAllUsers(): void
+    {
+        $users = (new UserService())->fetchAllUsers();
+        if(count($users) === 0) {
+            $this->error('No users found');
+            return;
+        }
+        Cache::put('existedUsers', $users, now()->addDay());
+    }
+
+    private function fetchEntities(): void
+    {
+        $entities = (new EntitiesService())->fetchAllEntities();
+        if(count($entities) === 0) {
+            $this->error('No entities found');
+            return;
+        }
+        Cache::put('existedEntities', $entities, now()->addDay());
+    }
+
+    private function fetchBanks(): void
+    {
+        $banks = (new BankService())->fetchAllBanks();
+        if(count($banks) === 0) {
+            $this->error('No banks found');
+            return;
+        }
+        Cache::put('existedBanks', $banks, now()->addDay());
+    }
+
+    private function fetchCurrencies(): void
+    {
+        $currencies = (new CurrencyService())->fetchAllCurrencies();
+        if(count($currencies) === 0) {
+            $this->error('No currencies found');
+            return;
+        }
+        Cache::put('existedCurrencies', $currencies, now()->addDay());
+    }
+
+    private function fetchMasterAgents(): void
+    {
+        $masterAgents = (new MasterAgentService())->fetchAllMasterAgents();
+        if(count($masterAgents) === 0) {
+            $this->error('No master agents found');
+            return;
+        }
+        Cache::put('existedMasterAgents', $masterAgents, now()->addDay());
+    }
+
+    private function fetchPlatforms(): void
+    {
+        $platforms = (new PlatformService())->fetchAllPlatforms();
+        if(count($platforms) === 0) {
+            $this->error('No platforms found');
+            return;
+        }
+        Cache::put('existedPlatforms', $platforms, now()->addDay());
+    }
+
+    private function fetchAccounts(): void
+    {
+        $accounts = (new AccountService())->fetchAllAccounts();
+        if(count($accounts) === 0) {
+            $this->error('No accounts found');
+            return;
+        }
+        Cache::put('existedAccounts', $accounts, now()->addDay());
+    }
+
+    private function fetchTransactions(): void
+    {
+        $existedAccounts = Cache::get('existedAccounts', []);
+        $transactions = [];
+        foreach ($existedAccounts as $account) {
+            $transactions[] = (new TransactionService())->fetchAllTransactions($account['id']);
+        }
+        Cache::put('existedTransactions', $transactions, now()->addDay());
+    }
+
+    private function fetchEntityCurrencyCommission(): void
+    {
+        $existedEntities = Cache::get('existedEntities', []);
+        $commissions = [];
+        foreach ($existedEntities as $entity) {
+            $commissions[] = (new EntityCurrencyCommissionService())->fetchEntityCurrencyCommission($entity['id']);
+        }
+        Cache::put('existedEntityCurrencyCommission', $commissions, now()->addDay());
     }
 }

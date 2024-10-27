@@ -206,5 +206,11 @@ class AccountService extends BaseService
         throw new \Exception('Operator not found', 404);
     }
 
+    public function fetchAllAccounts(): array
+    {
+        $res = $this->request('/api/v1/stock/accounts');
+        return $res['data'] ?? [];
+    }
+
 
 }

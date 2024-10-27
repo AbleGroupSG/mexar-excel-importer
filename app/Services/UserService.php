@@ -65,4 +65,10 @@ class UserService extends BaseService
             logger()->info('Unexpected response', ['response' => $res]);
         }
     }
+
+    public function fetchAllUsers()
+    {
+        $res = $this->request('/api/v1/users');
+        return $res['data'] ?? [];
+    }
 }

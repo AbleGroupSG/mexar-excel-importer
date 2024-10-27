@@ -32,4 +32,10 @@ class BankService extends BaseService
             }
         }
     }
+
+    public function fetchAllBanks(): array
+    {
+        $res = $this->request('/api/v1/stock/banks');
+        return $res['data'] ?? [];
+    }
 }

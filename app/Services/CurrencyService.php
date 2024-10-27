@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class CurrencyService extends BaseService
 {
@@ -13,7 +13,6 @@ class CurrencyService extends BaseService
      */
     public function createCurrency(array $row, int $departmentID): void
     {
-//        dd($row);
         $payload = [
             'currency_id' => $this->getCurrencyId($row['currency']), // 'Currency ID',
             'use_reverse_rate' => $row['is_reverse_rate'], // 'Is Reverse Rate',
@@ -36,6 +35,13 @@ class CurrencyService extends BaseService
                 );
             }
         }
+    }
+
+    public function fetchAllCurrencies()
+    {
+        $departmentId = Cache::get('departmentId', 1);
+        $res = $this->request("/api/v1/departments/$departmentId/currencies");
+        return $res['data'] ?? [];
     }
 
 }

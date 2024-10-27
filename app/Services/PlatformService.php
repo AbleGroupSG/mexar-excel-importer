@@ -20,7 +20,6 @@ class PlatformService extends BaseService
         ];
 
         $res = $this->request('/api/v1/data/payments/platforms', 'post', $payload);
-
         if(isset($res['errors'])) {
             $errors = $res['errors'];
             foreach ($errors as $error) {
@@ -32,5 +31,11 @@ class PlatformService extends BaseService
                 }
             }
         }
+    }
+
+    public function fetchAllPlatforms(): array
+    {
+        $res = $this->request('/api/v1/data/payments/platforms');
+        return $res['data'] ?? [];
     }
 }

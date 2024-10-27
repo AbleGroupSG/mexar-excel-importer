@@ -232,4 +232,10 @@ class TransactionService extends BaseService
         }
         return 0;
     }
+
+    public function fetchAllTransactions(int $accountId): array
+    {
+        $res = $this->request("/api/v1/stock/accounts/$accountId/transactions");
+        return $res['data'] ?? [];
+    }
 }

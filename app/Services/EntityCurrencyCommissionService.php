@@ -28,4 +28,10 @@ class EntityCurrencyCommissionService extends BaseService
             );
         }
     }
+
+    public function fetchEntityCurrencyCommission(int $entityID): array
+    {
+        $res = $this->request("/api/v1/crm/entities/$entityID/commissions");
+        return $res['data'] ?? [];
+    }
 }

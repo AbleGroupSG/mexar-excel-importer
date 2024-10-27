@@ -68,4 +68,10 @@ class MasterAgentService extends BaseService
 
        return $groupedEntities;
     }
+
+    public function fetchAllMasterAgents(): array
+    {
+        $res = $this->request('/api/v1/ma');
+        return $res['data'] ?? [];
+    }
 }
