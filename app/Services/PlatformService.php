@@ -33,6 +33,9 @@ class PlatformService extends BaseService
         }
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function platformExists(array $platformInfo): bool
     {
         $res = $this->request('/api/v1/data/payments/platforms', 'get', [

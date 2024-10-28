@@ -77,8 +77,13 @@ class TestRunningCommand extends Command
         $usersInfo = $service->removeEmptyRows($usersInfo);
         $this->saveHeader($usersInfo[0], 'users');
         foreach ($usersInfo as &$userInfo) {
-            $isStored = $service->userExists($userInfo);
-            $userInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try {
+                $isStored = $service->userExists($userInfo);
+                $userInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e) {
+                logger()->error($e->getMessage(), $usersInfo);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('usersInfo', $usersInfo, now()->addDay());
     }
@@ -88,8 +93,13 @@ class TestRunningCommand extends Command
         $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
         $this->saveHeader($entitiesInfo[0], 'entities');
         foreach ($entitiesInfo as &$entityInfo) {
-            $isStored = $service->entityExists($entityInfo);
-            $entityInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try {
+                $isStored = $service->entityExists($entityInfo);
+                $entityInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e){
+                logger()->error($e->getMessage(), $entityInfo);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('entitiesInfo', $entitiesInfo, now()->addDay());
     }
@@ -99,8 +109,13 @@ class TestRunningCommand extends Command
         $banksInfo = $service->removeEmptyRows($banksInfo);
         $this->saveHeader($banksInfo[0], 'banks');
         foreach ($banksInfo as &$bank) {
-            $isStored = $service->bankExists($bank);
-            $bank['is_stored'] = $isStored ? 'yes': 'no';
+            try{
+                $isStored = $service->bankExists($bank);
+                $bank['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e){
+                logger()->error($e->getMessage(), $bank);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('banksInfo', $banksInfo, now()->addDay());
     }
@@ -110,8 +125,13 @@ class TestRunningCommand extends Command
         $currenciesInfo = $service->removeEmptyRows($currenciesInfo);
         $this->saveHeader($currenciesInfo[0], 'currencies');
         foreach ($currenciesInfo as &$currencyInfo) {
-            $isStored = $service->currencyExists($currencyInfo);
-            $currencyInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try{
+                $isStored = $service->currencyExists($currencyInfo);
+                $currencyInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e) {
+                logger()->error($e->getMessage(), $currencyInfo);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('currenciesInfo', $currenciesInfo, now()->addDay());
     }
@@ -121,8 +141,13 @@ class TestRunningCommand extends Command
         $masterAgentInfo = $service->removeEmptyRows($masterAgentInfo);
         $this->saveHeader($masterAgentInfo[0], 'master_agents');
         foreach ($masterAgentInfo as &$agentInfo) {
-            $isStored = $service->masterAgentExists($agentInfo);
-            $agentInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try{
+                $isStored = $service->masterAgentExists($agentInfo);
+                $agentInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e) {
+                logger()->error($e->getMessage(), $agentInfo);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('masterAgentInfo', $masterAgentInfo, now()->addDay());
     }
@@ -132,10 +157,14 @@ class TestRunningCommand extends Command
         $platformsInfo = $service->removeEmptyRows($platformsInfo);
         $this->saveHeader($platformsInfo[0], 'platforms');
         foreach ($platformsInfo as &$platformInfo) {
-            $isStored = $service->platformExists($platformInfo);
-            $platformInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try{
+                $isStored = $service->platformExists($platformInfo);
+                $platformInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e){
+                logger()->error($e->getMessage(), $platformInfo);
+                $this->error($e->getMessage());
+            }
         }
-
         Cache::put('platformsInfo', $platformsInfo, now()->addDay());
     }
 
@@ -146,8 +175,13 @@ class TestRunningCommand extends Command
         $accountsInfo = $service->removeEmptyRows($accountsInfo);
         $this->saveHeader($accountsInfo[0], 'accounts');
         foreach ($accountsInfo as &$accountInfo) {
-            $isStored = $service->accountExists($accountInfo);
-            $accountInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try {
+                $isStored = $service->accountExists($accountInfo);
+                $accountInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e) {
+                logger()->error($e->getMessage(), $accountInfo);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('accountsInfo', $accountsInfo, now()->addDay());
     }
@@ -158,8 +192,13 @@ class TestRunningCommand extends Command
         $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
         $this->saveHeader($transactionsInfo[0], 'transactions');
         foreach ($transactionsInfo as &$transactionInfo) {
-            $isStored = $service->transactionExists($transactionInfo, $entitiesInfo);
-            $transactionInfo['is_stored'] = $isStored ? 'yes': 'no';
+            try{
+                $isStored = $service->transactionExists($transactionInfo, $entitiesInfo);
+                $transactionInfo['is_stored'] = $isStored ? 'yes': 'no';
+            }catch (\Throwable $e){
+                logger()->error($e->getMessage(), $transactionInfo);
+                $this->error($e->getMessage());
+            }
         }
         Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
     }
@@ -213,7 +252,6 @@ class TestRunningCommand extends Command
 
             $this->newLine();
             $this->output->success('Processing completed');
-    //            $this->info('Processing completed');
             $selectedOptions = [];
             $this->processExcel();
         });
