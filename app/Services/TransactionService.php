@@ -233,6 +233,41 @@ class TransactionService extends BaseService
         return 0;
     }
 
+    /**
+     * @throws Throwable
+     */
+    public function transactionExists(array $transactionInfo, array $entitiesInfo): bool
+    {
+        $entity = null;
+        foreach ($entitiesInfo as $row) {
+            if (isset($row['id']) && $row['id'] === $transactionInfo['entity_id']) {
+                $entity = $row;
+                break;
+            }
+        }
+        if($entity) {
+            $payload = [
+                'department_id' => $this->getDepartmentId(),
+                'transaction_type' => $transactionInfo['transaction_type'],
+                'currency_id' => $this->getCurrencyId($transactionInfo['from_currency']),
+            ];
+
+            $entity['entity_type'] === 'individual' ?
+                $payload['first_name'] = $entity['first_name'] :
+                $payload['name'] = $entity['name'];
+
+            $res = $this->request('/api/v1/transactions', 'get', $payload);
+
+            if(!empty($res['data'])) {
+                // TODO add more conditions to check if transaction exists
+                if(count($res['data'])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public function fetchAllTransactions(int $accountId): array
     {
         $res = $this->request("/api/v1/stock/accounts/$accountId/transactions");
