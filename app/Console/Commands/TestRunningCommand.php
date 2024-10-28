@@ -9,6 +9,7 @@ use App\Services\BankService;
 use App\Services\CurrencyService;
 use App\Services\DepartmentService;
 use App\Services\EntitiesService;
+use App\Services\EntityCurrencyCommissionService;
 use App\Services\MasterAgentService;
 use App\Services\PlatformService;
 use App\Services\TransactionService;
@@ -62,10 +63,10 @@ class TestRunningCommand extends Command
                 $transactionsInfo->toArray(),
                 $entitiesInfo->toArray()
             ]],
-//            'Entity Currency Commission' => ['processEntityCurrencyCommission', [
-//                $entityCurrencyCommissionInfo->toArray(),
-//                $entitiesInfo->toArray()
-//            ]],
+            'Entity Currency Commission' => ['processEntityCurrencyCommission', [
+                $entityCurrencyCommissionInfo->toArray(),
+                $entitiesInfo->toArray()
+            ]],
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);
@@ -202,6 +203,13 @@ class TestRunningCommand extends Command
         }
         Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
     }
+    private function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo): void
+    {
+        $service = new EntityCurrencyCommissionService();
+        $entityCurrencyCommissionInfo = $service->removeEmptyRows($entityCurrencyCommissionInfo);
+        $this->saveHeader($entityCurrencyCommissionInfo[0], 'entity_currency_commissions');
+        Cache::put('entityCurrencyCommissionInfo', $entityCurrencyCommissionInfo, now()->addDay());
+    }
 
     private function  selectDepartmentID(): void
     {
@@ -231,6 +239,7 @@ class TestRunningCommand extends Command
 
         $menu->open();
     }
+
     private function showAndProcessSheetsOptions(array $dataSources): void
     {
         $selectedOptions = [];
@@ -260,6 +269,8 @@ class TestRunningCommand extends Command
         $menu = $menuBuilder->build();
         $menu->open();
     }
+
+
     private function processData($function, array $parameters): void
     {
         call_user_func_array([$this, $function], $parameters);
