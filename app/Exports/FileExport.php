@@ -26,39 +26,39 @@ class FileExport implements WithMultipleSheets
         return [
             new TransactionSheet(
                 Cache::get('transactions_header', []),
-                Cache::get('usersInfo', []),
+                Cache::get('transactionsInfo', []),
             ),
             new CurrencySheet(
                 Cache::get('currencies_header', []),
-                Cache::get('entitiesInfo', []),
+                Cache::get('currenciesInfo', []),
             ),
             new EntitiesSheet(
                 Cache::get('entities_header', []),
-                Cache::get('banksInfo', []),
+                Cache::get('entitiesInfo', []),
             ),
             new BankSheet(
-                Cache::get('currenciesInfo', []),
-                Cache::get('banks_header', [])
+                Cache::get('banks_header', []),
+                Cache::get('banksInfo', []),
             ),
             new UsersSheet(
                 Cache::get('users_header', []),
-                Cache::get('masterAgentInfo', []),
+                Cache::get('usersInfo', []),
             ),
             new AccountsSheet(
                 Cache::get('accounts_header', []),
-                Cache::get('platformsInfo', []),
+                Cache::get('accountsInfo', []),
             ),
             new PlatformSheet(
                 Cache::get('platforms_header', []),
-                Cache::get('accountsInfo', []),
+                Cache::get('platformsInfo', []),
             ),
             new PaymentsSheet(
                 Cache::get('payments_header', []),
-                Cache::get('transactionsInfo', []),
+                Cache::get('paymentsInfo', []),
             ),
             new MasterAgentSheet(
                 Cache::get('master_agents_header', []),
-                Cache::get('paymentsInfo', []),
+                Cache::get('masterAgentInfo', []),
             ),
             new EntityCurrencyCommissionSheet(
                 Cache::get('entity_currency_commissions_header', []),

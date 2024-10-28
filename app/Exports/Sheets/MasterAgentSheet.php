@@ -5,8 +5,9 @@ namespace App\Exports\Sheets;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class MasterAgentSheet implements FromCollection, WithColumnWidths, WithHeadings
+class MasterAgentSheet implements FromCollection, WithColumnWidths, WithHeadings, WithTitle
 {
 
     public function __construct(
@@ -43,5 +44,10 @@ class MasterAgentSheet implements FromCollection, WithColumnWidths, WithHeadings
     public function headings(): array
     {
         return $this->headings;
+    }
+
+    public function title(): string
+    {
+        return 'Master Agents';
     }
 }

@@ -6,8 +6,9 @@ use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class TransactionSheet implements FromCollection, WithColumnWidths, WithHeadings
+class TransactionSheet implements FromCollection, WithColumnWidths, WithHeadings, WithTitle
 {
     public function __construct(
         readonly private array $header,
@@ -39,5 +40,10 @@ class TransactionSheet implements FromCollection, WithColumnWidths, WithHeadings
     public function headings(): array
     {
         return $this->header;
+    }
+
+    public function title(): string
+    {
+        return 'Transactions';
     }
 }
