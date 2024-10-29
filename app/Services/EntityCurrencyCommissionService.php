@@ -29,6 +29,26 @@ class EntityCurrencyCommissionService extends BaseService
         }
     }
 
+    /**
+     * @throws \Throwable
+     */
+    public function entityCurrencyCommissionExists(int $entityID, array $commissionInfo): bool
+    {
+        $res = $this->request("/api/v1/crm/entities/$entityID/commissions");
+        if(!empty($res['data'])) {
+            foreach ($res['data'] as $datum) {
+                if(
+                    $datum['currency_id'] == $this->getCurrencyId($commissionInfo['currency']) &&
+                    $datum['commission_type'] == $commissionInfo['commission_type'] &&
+                    $datum['commission_rate'] == $commissionInfo['commission_value']
+                ){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public function fetchEntityCurrencyCommission(int $entityID): array
     {
         $res = $this->request("/api/v1/crm/entities/$entityID/commissions");

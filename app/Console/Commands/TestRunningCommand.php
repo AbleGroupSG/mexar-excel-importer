@@ -51,6 +51,7 @@ class TestRunningCommand extends Command
         $masterAgent = $data[8];
         $entityCurrencyCommissionInfo = $data[9];
 
+
         $dataSources = [
             'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
             'Entities Info'              => ['processEntities', [$entitiesInfo->toArray()]],
@@ -203,11 +204,38 @@ class TestRunningCommand extends Command
         }
         Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
     }
-    private function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo): void
+    private function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo, array $entitiesInfo): void
     {
         $service = new EntityCurrencyCommissionService();
+        $entityService = new EntitiesService();
         $entityCurrencyCommissionInfo = $service->removeEmptyRows($entityCurrencyCommissionInfo);
+        $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
         $this->saveHeader($entityCurrencyCommissionInfo[0], 'entity_currency_commissions');
+
+        foreach ($entitiesInfo as $entityInfo) {
+            try {
+                $entity = $entityService->entityExists($entityInfo);
+                if($entity){
+                    foreach ($entityCurrencyCommissionInfo as &$commissionInfo) {
+                        if($commissionInfo['entity_id'] == $entityInfo['id']) {
+                            $isStored = $service->entityCurrencyCommissionExists(
+                                $entity['id'],
+                                $commissionInfo
+                            );
+                            $commissionInfo['is_stored'] = $isStored ? 'yes' : 'no';
+                        }
+                    }
+                }
+                foreach ($entityCurrencyCommissionInfo as &$commissionInfo) {
+                    if(!isset($commissionInfo['is_stored'])) {
+                        $commissionInfo['is_stored'] = 'no';
+                    }
+                }
+            }catch (\Throwable $e) {
+                logger()->error($e->getMessage());
+                $this->error($e->getMessage());
+            }
+        }
         Cache::put('entityCurrencyCommissionInfo', $entityCurrencyCommissionInfo, now()->addDay());
     }
 

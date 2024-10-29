@@ -223,7 +223,7 @@ class EntitiesService extends BaseService
     /**
      * @throws \Throwable
      */
-    public function entityExists(array $entityInfo):bool
+    public function entityExists(array $entityInfo):bool|array
     {
         $payload = [
             'q' => $entityInfo['entity_type'] === 'individual' ? $entityInfo['first_name'] : $entityInfo['name'],
@@ -239,13 +239,13 @@ class EntitiesService extends BaseService
                 $entity['first_name'] === $entityInfo['first_name'] &&
                 $entity['last_name'] === $entityInfo['last_name']
             ) {
-                return true;
+                return $entity;
             }
             if(
                 $entity['entity_type'] === 'corporate' &&
                 $entity['name'] === $entityInfo['name']
             ) {
-                return true;
+                return $entity;
             }
         }
         return false;
