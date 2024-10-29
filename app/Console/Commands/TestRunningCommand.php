@@ -43,26 +43,26 @@ class TestRunningCommand extends Command
         $transactionsInfo = $data[0];
         $currencyInfo = $data[1];
         $entitiesInfo = $data[2];
-        $banks = $data[5];
+        $banksInfo = $data[5];
         $usersInfo = $data[3];
-        $accounts = $data[4];
-        $platforms = $data[6];
-        $payments = $data[7];
-        $masterAgent = $data[8];
+        $accountsInfo = $data[4];
+        $platformsInfo = $data[6];
+        $paymentsInfo = $data[7];
+        $masterAgentInfo = $data[8];
         $entityCurrencyCommissionInfo = $data[9];
 
 
         $dataSources = [
-            'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
-            'Entities Info'              => ['processEntities', [$entitiesInfo->toArray()]],
-            'Banks'                      => ['processBanks', [$banks->toArray()]],
+            'Users'                 => ['processUsers', [$usersInfo->toArray()]],
+            'Entities'              => ['processEntities', [$entitiesInfo->toArray()]],
+            'Banks'                      => ['processBanks', [$banksInfo->toArray()]],
             'Department Currency'        => ['processCurrencies', [$currencyInfo->toArray()]],
-            'Master Agent'               => ['processMasterAgent', [$masterAgent->toArray(), $entitiesInfo->toArray()]],
-            'Platforms'                  => ['processPlatforms', [$platforms->toArray()]],
-            'Accounts'                   => ['processAccounts', [$accounts->toArray()]],
-            'Transactions Info'          => ['processTransactions', [
+            'Master Agent'               => ['processMasterAgent', [$masterAgentInfo->toArray(), $entitiesInfo->toArray()]],
+            'Platforms'                  => ['processPlatforms', [$platformsInfo->toArray()]],
+            'Accounts'                   => ['processAccounts', [$accountsInfo->toArray()]],
+            'Transactions'          => ['processTransactions', [
                 $transactionsInfo->toArray(),
-                $entitiesInfo->toArray()
+                $entitiesInfo->toArray(),
             ]],
             'Entity Currency Commission' => ['processEntityCurrencyCommission', [
                 $entityCurrencyCommissionInfo->toArray(),
