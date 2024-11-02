@@ -36,10 +36,6 @@ class FileExport implements WithMultipleSheets
                 Cache::get('entities_header', []),
                 Cache::get('entitiesInfo', []),
             ),
-            new BankSheet(
-                Cache::get('banks_header', []),
-                Cache::get('banksInfo', []),
-            ),
             new UsersSheet(
                 Cache::get('users_header', []),
                 Cache::get('usersInfo', []),
@@ -47,6 +43,10 @@ class FileExport implements WithMultipleSheets
             new AccountsSheet(
                 Cache::get('accounts_header', []),
                 Cache::get('accountsInfo', []),
+            ),
+            new BankSheet(
+                Cache::get('banks_header', []),
+                Cache::get('banksInfo', []),
             ),
             new PlatformSheet(
                 Cache::get('platforms_header', []),

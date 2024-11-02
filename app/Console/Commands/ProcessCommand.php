@@ -24,7 +24,7 @@ class ProcessCommand extends Command
     protected $signature = 'process.excel';
     public function handle(): void
     {
-        $path = 'excel3.xlsx';
+        $path = 'output.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
         $this->info('Loading...');
 
@@ -41,6 +41,7 @@ class ProcessCommand extends Command
         $payments = $data[7];
         $masterAgent = $data[8];
         $entityCurrencyCommissionInfo = $data[9];
+
 
         $dataSources = [
             'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
