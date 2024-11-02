@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class AccountService extends BaseService
@@ -227,26 +228,36 @@ class AccountService extends BaseService
             ) {
                 return true;
             }
+            //
             if (
                 Str::lower($accountInfo['account_type']) === 'crypto' &&
-                $account['crypto_wallet_address'] === $accountInfo['wallet_address']
+                $account['crypto_wallet_address'] === $accountInfo['wallet_address'] &&
+                $account['crypto_wallet_name'] === $accountInfo['platform_name']
             ) {
                 return true;
             }
+            //
             if(
                 Str::lower($accountInfo['account_type']) === 'payable' &&
                 $account['account_number'] === $accountInfo['account_number']
             ) {
                 return true;
             }
-
-            //TODO how to check app accounts
+            //
             if (
                 Str::lower($accountInfo['account_type']) === 'app'
             ) {
-                return true;
+                $platformId = $this->findPlatform($accountInfo['platform_name']);
+                if($platformId) {
+                    if (
+                        $account['platform_id'] === $platformId &&
+                        $account['platform_account_id'] === $accountInfo['app_id']
+                    ) {
+                        return true;
+                    }
+                }
+                return false;
             }
-
         }
         return false;
     }
@@ -257,5 +268,20 @@ class AccountService extends BaseService
         return $res['data'] ?? [];
     }
 
-
+    /**
+     * @throws \Throwable
+     */
+    public function findPlatform(string $platformName): int
+    {
+        $platforms = Cache::rememberForever('platforms', function () {
+            $res = $this->request('/api/v1/data/payments/platforms');
+            return $res['data'];
+        });
+        foreach ($platforms as $platform) {
+            if($platform['platform_name'] === $platformName) {
+                return $platform['id'];
+            }
+        }
+        return false;
+    }
 }

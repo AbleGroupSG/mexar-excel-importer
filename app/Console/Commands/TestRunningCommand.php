@@ -34,36 +34,37 @@ class TestRunningCommand extends Command
      */
     public function handle()
     {
+        //
         $path = 'excel3.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
         $this->info('Loading...');
 
         $this->selectDepartmentID();
 
-        $transactionsInfo = $data[0];
+        //        $transactionsInfo = $data[0];
         $currencyInfo = $data[1];
         $entitiesInfo = $data[2];
         $banksInfo = $data[5];
         $usersInfo = $data[3];
         $accountsInfo = $data[4];
         $platformsInfo = $data[6];
-        $paymentsInfo = $data[7];
+        //        $paymentsInfo = $data[7];
         $masterAgentInfo = $data[8];
         $entityCurrencyCommissionInfo = $data[9];
 
 
         $dataSources = [
-            'Users'                 => ['processUsers', [$usersInfo->toArray()]],
-            'Entities'              => ['processEntities', [$entitiesInfo->toArray()]],
+            'Users'                      => ['processUsers', [$usersInfo->toArray()]],
+            'Entities'                   => ['processEntities', [$entitiesInfo->toArray()]],
             'Banks'                      => ['processBanks', [$banksInfo->toArray()]],
             'Department Currency'        => ['processCurrencies', [$currencyInfo->toArray()]],
             'Master Agent'               => ['processMasterAgent', [$masterAgentInfo->toArray(), $entitiesInfo->toArray()]],
             'Platforms'                  => ['processPlatforms', [$platformsInfo->toArray()]],
             'Accounts'                   => ['processAccounts', [$accountsInfo->toArray()]],
-            'Transactions'          => ['processTransactions', [
-                $transactionsInfo->toArray(),
-                $entitiesInfo->toArray(),
-            ]],
+            //            'Transactions'               => ['processTransactions', [
+            //                $transactionsInfo->toArray(),
+            //                $entitiesInfo->toArray(),
+            //            ]],
             'Entity Currency Commission' => ['processEntityCurrencyCommission', [
                 $entityCurrencyCommissionInfo->toArray(),
                 $entitiesInfo->toArray()
@@ -172,7 +173,6 @@ class TestRunningCommand extends Command
 
     private function processAccounts(array $accountsInfo): void
     {
-        // TODO NOT COMPLETE
         $service = new AccountService();
         $accountsInfo = $service->removeEmptyRows($accountsInfo);
         $this->saveHeader($accountsInfo[0], 'accounts');
@@ -187,23 +187,22 @@ class TestRunningCommand extends Command
         }
         Cache::put('accountsInfo', $accountsInfo, now()->addDay());
     }
-    private function processTransactions(array $transactionsInfo, array $entitiesInfo): void
-    {
-        // TODO NOT COMPLETE
-        $service = new TransactionService();
-        $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
-        $this->saveHeader($transactionsInfo[0], 'transactions');
-        foreach ($transactionsInfo as &$transactionInfo) {
-            try{
-                $isStored = $service->transactionExists($transactionInfo, $entitiesInfo);
-                $transactionInfo['is_stored'] = $isStored ? 'yes': 'no';
-            }catch (\Throwable $e){
-                logger()->error($e->getMessage(), $transactionInfo);
-                $this->error($e->getMessage());
-            }
-        }
-        Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
-    }
+    //    private function processTransactions(array $transactionsInfo, array $entitiesInfo): void
+    //    {
+    //        $service = new TransactionService();
+    //        $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
+    //        $this->saveHeader($transactionsInfo[0], 'transactions');
+    //        foreach ($transactionsInfo as &$transactionInfo) {
+    //            try{
+    //                $isStored = $service->transactionExists($transactionInfo, $entitiesInfo);
+    //                $transactionInfo['is_stored'] = $isStored ? 'yes': 'no';
+    //            }catch (\Throwable $e){
+    //                logger()->error($e->getMessage(), $transactionInfo);
+    //                $this->error($e->getMessage());
+    //            }
+    //        }
+    //        Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
+    //    }
     private function processEntityCurrencyCommission(array $entityCurrencyCommissionInfo, array $entitiesInfo): void
     {
         $service = new EntityCurrencyCommissionService();
