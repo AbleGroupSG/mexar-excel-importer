@@ -41,33 +41,46 @@ class TestRunningCommand extends Command
 
         $this->selectDepartmentID();
 
-        //        $transactionsInfo = $data[0];
-        $currencyInfo = $data[1];
-        $entitiesInfo = $data[2];
-        $banksInfo = $data[5];
-        $usersInfo = $data[3];
-        $accountsInfo = $data[4];
-        $platformsInfo = $data[6];
-        //        $paymentsInfo = $data[7];
-        $masterAgentInfo = $data[8];
-        $entityCurrencyCommissionInfo = $data[9];
+        $transactionsInfo = $data[0]->toArray();
+        $currencyInfo = $data[1]->toArray();
+        $entitiesInfo = $data[2]->toArray();
+        $banksInfo = $data[5]->toArray();
+        $usersInfo = $data[3]->toArray();
+        $accountsInfo = $data[4]->toArray();
+        $platformsInfo = $data[6]->toArray();
+        $paymentsInfo = $data[7]->toArray();
+        $masterAgentInfo = $data[8]->toArray();
+        $entityCurrencyCommissionInfo = $data[9]->toArray();
 
+
+        // We are not checking payments and transactions for info
+        // so we put them as it is for inserting in excel
+        $this->saveHeader($transactionsInfo[0], 'transactions');
+        $this->saveHeader($paymentsInfo[0], 'payments');
+        Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
+        Cache::put('paymentsInfo', $paymentsInfo, now()->addDay());
+        //
+
+
+        if(Cache::has('mapped.customers')) {
+            $entitiesInfo = array_merge($entitiesInfo, Cache::get('mapped.customers', []));
+        }
 
         $dataSources = [
-            'Users'                      => ['processUsers', [$usersInfo->toArray()]],
-            'Entities'                   => ['processEntities', [$entitiesInfo->toArray()]],
-            'Banks'                      => ['processBanks', [$banksInfo->toArray()]],
-            'Department Currency'        => ['processCurrencies', [$currencyInfo->toArray()]],
-            'Master Agent'               => ['processMasterAgent', [$masterAgentInfo->toArray(), $entitiesInfo->toArray()]],
-            'Platforms'                  => ['processPlatforms', [$platformsInfo->toArray()]],
-            'Accounts'                   => ['processAccounts', [$accountsInfo->toArray()]],
+            'Users'                      => ['processUsers', [$usersInfo]],
+            'Entities'                   => ['processEntities', [$entitiesInfo]],
+            'Banks'                      => ['processBanks', [$banksInfo]],
+            'Department Currency'        => ['processCurrencies', [$currencyInfo]],
+            'Master Agent'               => ['processMasterAgent', [$masterAgentInfo, $entitiesInfo]],
+            'Platforms'                  => ['processPlatforms', [$platformsInfo]],
+            'Accounts'                   => ['processAccounts', [$accountsInfo]],
             //            'Transactions'               => ['processTransactions', [
             //                $transactionsInfo->toArray(),
             //                $entitiesInfo->toArray(),
             //            ]],
             'Entity Currency Commission' => ['processEntityCurrencyCommission', [
-                $entityCurrencyCommissionInfo->toArray(),
-                $entitiesInfo->toArray()
+                $entityCurrencyCommissionInfo,
+                $entitiesInfo
             ]],
         ];
 
@@ -104,6 +117,7 @@ class TestRunningCommand extends Command
                 $this->error($e->getMessage());
             }
         }
+
         Cache::put('entitiesInfo', $entitiesInfo, now()->addDay());
     }
     private function processBanks(array $banksInfo): void
@@ -305,7 +319,9 @@ class TestRunningCommand extends Command
 
     private function processExcel(): void
     {
+        $this->info('Saving to excel...');
         Excel::store(new FileExport(), 'output.xlsx', 'public');
+        $this->info('Saved to excel');
     }
 
     private function saveHeader($row, $sheet): void

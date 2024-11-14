@@ -6,8 +6,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-openssl": "*",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
+        "league/iso3166": "^4.3",
         "maatwebsite/excel": "^3.1",
         "php-school/cli-menu": "^4.3"
     },

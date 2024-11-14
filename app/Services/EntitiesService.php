@@ -100,7 +100,6 @@ class EntitiesService extends BaseService
             foreach ($entityContactArray as $contact){
                 $response = $this->request("/api/v1/crm/entities/$entityId/contacts", 'post', $contact);
                 $this->handleResponse($response, $contact, "Error creating entity's contact");
-                dump($response);
             }
         }
         return $responseData;
