@@ -16,6 +16,7 @@ class UserService extends BaseService
             'password' => $userInfo['password'],
             'first_name' => $userInfo['first_name'],
             'last_name' => $userInfo['last_name'],
+            'name' => $userInfo['first_name'] . ' ' . $userInfo['last_name'],
 //            'entity_id' => $userInfo[3],
         ];
         $res = $this->request('/api/v1/users', 'post', $payload);
