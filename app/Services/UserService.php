@@ -11,7 +11,7 @@ class UserService extends BaseService
     {
         $payload = [
             'username' => $userInfo['username'],
-            'role' => 'employee',
+            'role' => "3",
             'email' => $userInfo['email'],
             'password' => $userInfo['password'],
             'first_name' => $userInfo['first_name'],
