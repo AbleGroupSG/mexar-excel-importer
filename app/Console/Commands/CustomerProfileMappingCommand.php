@@ -44,7 +44,7 @@ class CustomerProfileMappingCommand extends Command
             $importFileFormat->push([
                 'id'=> $row['id'],
                 'entity_type' => $row['entity_type'] ?? 'individual',
-                'name'=> $row['name'] ?? null,
+                'name'=> (string) $row['name'] ?? null,
                 'first_name' => $row['first_name'] ?? null,
                 'last_name' => $row['last_name'] ?? null,
                 'gender'=> $row['gender'] ? $this->parseGender($row['gender']) : null,
