@@ -34,11 +34,10 @@ class TestRunningCommand extends Command
      */
     public function handle()
     {
-        //
+        Cache::forget('token');
         $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
         $this->info('Loading...');
-
 
         $transactionsInfo = $data[0]->toArray();
         $currencyInfo = $data[1]->toArray();
@@ -55,7 +54,6 @@ class TestRunningCommand extends Command
 
         // We are not checking payments and transactions for info
         // so we put them as it is for inserting in excel
-
         $this->saveHeader($transactionsInfo[0] ?? [], 'transactions');
         $this->saveHeader($paymentsInfo[0] ?? [], 'payments');
         Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
