@@ -58,6 +58,7 @@ class EntitiesService extends BaseService
     {
         $entityType = $data['entity_type'];
         if($entityType === 'individual') {
+
             $payload = [
                 'department_id' => $this->getDepartmentId(),
                 'entity_type' => 'individual',
@@ -65,6 +66,7 @@ class EntitiesService extends BaseService
                 'first_name' => str($data['first_name']) ?? '',
                 'last_name' => $data['last_name'],
                 'gender' => $data['gender'],
+                'notes' => $data['notes'] ?? null,
             ];
             $response = $this->request('/api/v1/crm/entities', 'post', $payload);
             $responseData = $this->handleResponse($response, $payload, 'Error creating entity');
