@@ -35,11 +35,10 @@ class TestRunningCommand extends Command
     public function handle()
     {
         //
-        $path = 'excel3.xlsx';
+        $path = 'excel1.xlsx';
         $data = Excel::toCollection(new ExcelImport, $path, 'public');
         $this->info('Loading...');
 
-        $this->selectDepartmentID();
 
         $transactionsInfo = $data[0]->toArray();
         $currencyInfo = $data[1]->toArray();
@@ -50,21 +49,24 @@ class TestRunningCommand extends Command
         $platformsInfo = $data[6]->toArray();
         $paymentsInfo = $data[7]->toArray();
         $masterAgentInfo = $data[8]->toArray();
-        $entityCurrencyCommissionInfo = $data[9]->toArray();
+//        $entityCurrencyCommissionInfo = $data[9]->toArray();
 
+        $this->selectDepartmentID();
 
         // We are not checking payments and transactions for info
         // so we put them as it is for inserting in excel
-        $this->saveHeader($transactionsInfo[0], 'transactions');
-        $this->saveHeader($paymentsInfo[0], 'payments');
+
+        $this->saveHeader($transactionsInfo[0] ?? [], 'transactions');
+        $this->saveHeader($paymentsInfo[0] ?? [], 'payments');
         Cache::put('transactionsInfo', $transactionsInfo, now()->addDay());
         Cache::put('paymentsInfo', $paymentsInfo, now()->addDay());
         //
 
 
         if(Cache::has('mapped.customers')) {
-            $entitiesInfo = array_merge($entitiesInfo, Cache::get('mapped.customers', []));
+            $entitiesInfo = Cache::get('mapped.customers', []);
         }
+
 
         $dataSources = [
             'Users'                      => ['processUsers', [$usersInfo]],
@@ -74,14 +76,11 @@ class TestRunningCommand extends Command
             'Master Agent'               => ['processMasterAgent', [$masterAgentInfo, $entitiesInfo]],
             'Platforms'                  => ['processPlatforms', [$platformsInfo]],
             'Accounts'                   => ['processAccounts', [$accountsInfo]],
-            //            'Transactions'               => ['processTransactions', [
-            //                $transactionsInfo->toArray(),
-            //                $entitiesInfo->toArray(),
-            //            ]],
-            'Entity Currency Commission' => ['processEntityCurrencyCommission', [
+
+            /*'Entity Currency Commission' => ['processEntityCurrencyCommission', [
                 $entityCurrencyCommissionInfo,
                 $entitiesInfo
-            ]],
+            ]],*/
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);
@@ -91,7 +90,10 @@ class TestRunningCommand extends Command
     {
         $service = new UserService();
         $usersInfo = $service->removeEmptyRows($usersInfo);
-        $this->saveHeader($usersInfo[0], 'users');
+        $this->saveHeader($usersInfo[0] ?? [], 'users');
+
+        $progressBar = $this->output->createProgressBar(sizeof($usersInfo));
+        $progressBar->start();
         foreach ($usersInfo as &$userInfo) {
             try {
                 $isStored = $service->userExists($userInfo);
@@ -100,14 +102,20 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $usersInfo);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('usersInfo', $usersInfo, now()->addDay());
     }
     private function processEntities(array $entitiesInfo): void
     {
         $service = new EntitiesService();
         $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
-        $this->saveHeader($entitiesInfo[0], 'entities');
+        $entitiesInfo[0]['notes'] = null;
+        $this->saveHeader($entitiesInfo[0] ?? [], 'entities');
+
+        $progressBar = $this->output->createProgressBar(sizeof($entitiesInfo));
+        $progressBar->start();
         foreach ($entitiesInfo as &$entityInfo) {
             try {
                 $isStored = $service->entityExists($entityInfo);
@@ -116,15 +124,19 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $entityInfo);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
-
+        $progressBar->finish();
         Cache::put('entitiesInfo', $entitiesInfo, now()->addDay());
     }
     private function processBanks(array $banksInfo): void
     {
         $service = new BankService();
         $banksInfo = $service->removeEmptyRows($banksInfo);
-        $this->saveHeader($banksInfo[0], 'banks');
+        $this->saveHeader($banksInfo[0] ?? [], 'banks');
+
+        $progressBar = $this->output->createProgressBar(sizeof($banksInfo));
+        $progressBar->start();
         foreach ($banksInfo as &$bank) {
             try{
                 $isStored = $service->bankExists($bank);
@@ -133,14 +145,19 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $bank);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('banksInfo', $banksInfo, now()->addDay());
     }
     private function processCurrencies(array $currenciesInfo): void
     {
         $service = new CurrencyService();
         $currenciesInfo = $service->removeEmptyRows($currenciesInfo);
-        $this->saveHeader($currenciesInfo[0], 'currencies');
+        $this->saveHeader($currenciesInfo[0] ?? [], 'currencies');
+
+        $progressBar = $this->output->createProgressBar(sizeof($currenciesInfo));
+        $progressBar->start();
         foreach ($currenciesInfo as &$currencyInfo) {
             try{
                 $isStored = $service->currencyExists($currencyInfo);
@@ -149,14 +166,19 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $currencyInfo);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('currenciesInfo', $currenciesInfo, now()->addDay());
     }
     private function processMasterAgent(array $masterAgentInfo): void
     {
         $service = new MasterAgentService();
         $masterAgentInfo = $service->removeEmptyRows($masterAgentInfo);
-        $this->saveHeader($masterAgentInfo[0], 'master_agents');
+        $this->saveHeader($masterAgentInfo[0] ?? [], 'master_agents');
+
+        $progressBar = $this->output->createProgressBar(sizeof($masterAgentInfo));
+        $progressBar->start();
         foreach ($masterAgentInfo as &$agentInfo) {
             try{
                 $isStored = $service->masterAgentExists($agentInfo);
@@ -165,14 +187,19 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $agentInfo);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('masterAgentInfo', $masterAgentInfo, now()->addDay());
     }
     private function processPlatforms(array $platformsInfo): void
     {
         $service = new PlatformService();
         $platformsInfo = $service->removeEmptyRows($platformsInfo);
-        $this->saveHeader($platformsInfo[0], 'platforms');
+        $this->saveHeader($platformsInfo[0] ?? [], 'platforms');
+
+        $progressBar = $this->output->createProgressBar(sizeof($platformsInfo));
+        $progressBar->start();
         foreach ($platformsInfo as &$platformInfo) {
             try{
                 $isStored = $service->platformExists($platformInfo);
@@ -181,7 +208,9 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $platformInfo);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('platformsInfo', $platformsInfo, now()->addDay());
     }
 
@@ -189,7 +218,10 @@ class TestRunningCommand extends Command
     {
         $service = new AccountService();
         $accountsInfo = $service->removeEmptyRows($accountsInfo);
-        $this->saveHeader($accountsInfo[0], 'accounts');
+        $this->saveHeader($accountsInfo[0] ?? [], 'accounts');
+
+        $progressBar = $this->output->createProgressBar(sizeof($accountsInfo));
+        $progressBar->start();
         foreach ($accountsInfo as &$accountInfo) {
             try {
                 $isStored = $service->accountExists($accountInfo);
@@ -198,14 +230,16 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage(), $accountInfo);
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('accountsInfo', $accountsInfo, now()->addDay());
     }
     //    private function processTransactions(array $transactionsInfo, array $entitiesInfo): void
     //    {
     //        $service = new TransactionService();
     //        $transactionsInfo = $service->removeEmptyRows($transactionsInfo);
-    //        $this->saveHeader($transactionsInfo[0], 'transactions');
+    //        $this->saveHeader($transactionsInfo[0] ?? [], 'transactions');
     //        foreach ($transactionsInfo as &$transactionInfo) {
     //            try{
     //                $isStored = $service->transactionExists($transactionInfo, $entitiesInfo);
@@ -223,8 +257,10 @@ class TestRunningCommand extends Command
         $entityService = new EntitiesService();
         $entityCurrencyCommissionInfo = $service->removeEmptyRows($entityCurrencyCommissionInfo);
         $entitiesInfo = $service->removeEmptyRows($entitiesInfo);
-        $this->saveHeader($entityCurrencyCommissionInfo[0], 'entity_currency_commissions');
+        $this->saveHeader($entityCurrencyCommissionInfo[0] ?? [], 'entity_currency_commissions');
 
+        $progressBar = $this->output->createProgressBar(sizeof($entitiesInfo));
+        $progressBar->start();
         foreach ($entitiesInfo as $entityInfo) {
             try {
                 $entity = $entityService->entityExists($entityInfo);
@@ -248,7 +284,9 @@ class TestRunningCommand extends Command
                 logger()->error($e->getMessage());
                 $this->error($e->getMessage());
             }
+            $progressBar->advance();
         }
+        $progressBar->finish();
         Cache::put('entityCurrencyCommissionInfo', $entityCurrencyCommissionInfo, now()->addDay());
     }
 
