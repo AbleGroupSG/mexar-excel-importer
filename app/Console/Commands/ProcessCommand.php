@@ -31,36 +31,39 @@ class ProcessCommand extends Command
         $this->selectDepartmentID();
         $this->completeTransactionOption();
 
-        $transactionsInfo = $data[0];
-        $currencyInfo = $data[1];
-        $entitiesInfo = $data[2];
-        $banks = $data[5];
-        $usersInfo = $data[3];
-        $accounts = $data[4];
-        $platforms = $data[6];
-        $payments = $data[7];
-        $masterAgent = $data[8];
-        $entityCurrencyCommissionInfo = $data[9];
+        $transactionsInfo = $data[0]->toArray();
+        $currencyInfo = $data[1]->toArray();
+        $entitiesInfo = $data[2]->toArray();
+        $banks = $data[5]->toArray();
+        $usersInfo = $data[3]->toArray();
+        $accounts = $data[4]->toArray();
+        $platforms = $data[6]->toArray();
+        $payments = $data[7]->toArray();
+        $masterAgent = $data[8]->toArray();
+//        $entityCurrencyCommissionInfo = $data[9]->toArray();
 
+        if(Cache::has('mapped.customers')) {
+            $entitiesInfo = Cache::get('mapped.customers', []);
+        }
 
         $dataSources = [
-            'Users Info'                 => ['processUsers', [$usersInfo->toArray()]],
-            'Entities Info'              => ['processEntities', [$entitiesInfo->toArray()]],
-            'Banks'                      => ['processBank', [$banks->toArray()]],
-            'Department Currency'        => ['processCurrencies', [$currencyInfo->toArray()]],
-            'Master Agent'               => ['processMasterAgent', [$masterAgent->toArray(), $entitiesInfo->toArray()]],
-            'Platforms'                  => ['processPlatforms', [$platforms->toArray()]],
-            'Accounts'                   => ['processAccounts', [$accounts->toArray()]],
+            'Users Info'                 => ['processUsers', [$usersInfo]],
+            'Entities Info'              => ['processEntities', [$entitiesInfo]],
+            'Banks'                      => ['processBank', [$banks]],
+            'Department Currency'        => ['processCurrencies', [$currencyInfo]],
+            'Master Agent'               => ['processMasterAgent', [$masterAgent, $entitiesInfo]],
+            'Platforms'                  => ['processPlatforms', [$platforms]],
+            'Accounts'                   => ['processAccounts', [$accounts]],
             'Transactions Info'          => ['processTransactions', [
-                $transactionsInfo->toArray(),
-                $payments->toArray(),
-                $entitiesInfo->toArray(),
-                $masterAgent->toArray()
+                $transactionsInfo,
+                $payments,
+                $entitiesInfo,
+                $masterAgent
             ]],
-            'Entity Currency Commission' => ['processEntityCurrencyCommission', [
-                $entityCurrencyCommissionInfo->toArray(),
-                $entitiesInfo->toArray()
-            ]],
+//            'Entity Currency Commission' => ['processEntityCurrencyCommission', [
+//                $entityCurrencyCommissionInfo,
+//                $entitiesInfo
+//            ]],
         ];
 
         $this->showAndProcessSheetsOptions($dataSources);
