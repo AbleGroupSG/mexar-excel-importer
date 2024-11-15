@@ -57,6 +57,7 @@ class CustomerProfileMappingCommand extends Command
                 'identity_expires_at' => $row['identity_expires_at'] ?? null,
                 'remark'=> $row['remark'] ?? null,
                 'referrer'=> $row['referrer'] ?? null,
+                'notes' => $row['group_name'] ?? null,
             ]);
 
             for ($i = 1; $i < max(count($contactTypes), count($contactNos)); $i++) {
@@ -82,6 +83,7 @@ class CustomerProfileMappingCommand extends Command
                     'identity_expires_at' => null,
                     'remark' => null,
                     'referrer' => null,
+                    'notes' => null,
                 ]);
             }
             $progressBar->advance();
